@@ -12,11 +12,12 @@ class MyBreadcrumb extends StatelessWidget {
   final List<MyBreadcrumbItem> children;
   final bool hideOnMobile;
 
-  MyBreadcrumb({super.key, required this.children, this.hideOnMobile = true}) {
-    if (MyConstant.constant.defaultBreadCrumbItem != null) {
-      children.insert(0, MyConstant.constant.defaultBreadCrumbItem!);
-    }
-  }
+  MyBreadcrumb({super.key, required this.children, this.hideOnMobile = true});
+  // {
+  //   if (MyConstant.constant.defaultBreadCrumbItem != null) {
+  //     children.insert(0, MyConstant.constant.defaultBreadCrumbItem!);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -10,7 +10,7 @@ class Login2Controller extends MyController {
 
   bool showPassword = false, loading = false, isChecked = false;
 
-  final String _dummyEmail = "webkit@getappui.com";
+  final String _dummyEmail = "admin@flipifly.com";
   final String _dummyPassword = "1234567";
 
   @override

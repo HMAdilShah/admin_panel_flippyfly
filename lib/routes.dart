@@ -6,6 +6,7 @@ import 'package:webkit/views/apps/calender.dart';
 import 'package:webkit/views/apps/chat_page.dart';
 import 'package:webkit/views/apps/contacts/edit_profile.dart';
 import 'package:webkit/views/apps/contacts/member_list.dart';
+import 'package:webkit/views/apps/contacts/post.dart';
 import 'package:webkit/views/apps/contacts/profile.dart';
 import 'package:webkit/views/apps/ecommerce/add_product.dart';
 import 'package:webkit/views/apps/ecommerce/customers.dart';
@@ -351,6 +352,13 @@ getPageRoute() {
     GetPage(
         name: '/maps/google-maps',
         page: () => GoogleMapPage(),
+        middlewares: [AuthMiddleware()]),
+
+    ///---------------- Post ----------------///
+
+    GetPage(
+        name: '/post',
+        page: () => PostList(),
         middlewares: [AuthMiddleware()]),
   ];
   return routes

@@ -10,7 +10,7 @@ class LoginController extends MyController {
 
   bool showPassword = false, loading = false, isChecked = false;
 
-  final String _dummyEmail = "webkit@getappui.com";
+  final String _dummyEmail = "admin@flipifly.com";
   final String _dummyPassword = "1234567";
 
   @override
@@ -52,7 +52,7 @@ class LoginController extends MyController {
         String nextUrl =
             Uri.parse(ModalRoute.of(Get.context!)?.settings.name ?? "")
                     .queryParameters['next'] ??
-                "/dashboard";
+                "/contacts/members";
         Get.toNamed(
           nextUrl,
         );

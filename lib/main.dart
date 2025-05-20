@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeCustomizer.instance.theme,
           navigatorKey: NavigationService.navigatorKey,
-          initialRoute: "/dashboard",
+          initialRoute: "/contacts/members",
           getPages: getPageRoute(),
           // onGenerateRoute: (_) => generateRoute(context, _),
           builder: (context, child) {
