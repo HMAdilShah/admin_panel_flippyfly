@@ -263,12 +263,12 @@ class _LeftBarState extends State<LeftBar> with SingleTickerProviderStateMixin, 
                   // ),
                   //
                   // //-----------------KanBan-----------------//
-                  // NavigationItem(
-                  //   iconData: LucideIcons.square_kanban,
-                  //   title: "Kanban",
-                  //   route: '/kanban',
-                  //   isCondensed: isCondensed,
-                  // ),
+                  NavigationItem(
+                    iconData: LucideIcons.square_kanban,
+                    title: "Kanban",
+                    route: '/kanban',
+                    isCondensed: isCondensed,
+                  ),
                   //
                   // //-----------------NFT Dashboard-----------------//
                   // NavigationItem(
