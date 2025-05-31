@@ -15,6 +15,7 @@ import 'package:webkit/helpers/widgets/my_spacing.dart';
 import 'package:webkit/helpers/widgets/my_text.dart';
 import 'package:webkit/helpers/widgets/my_text_style.dart';
 import 'package:webkit/helpers/widgets/responsive.dart';
+import 'package:webkit/models/app_user.dart';
 import 'package:webkit/views/layouts/layout.dart';
 
 class MemberList extends StatefulWidget {
@@ -209,123 +210,139 @@ class _MemberListState extends State<MemberList>
                       ],
                     ),
                     MySpacing.height(flexSpacing),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      itemCount: controller.discover.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 350,
-                              // childAspectRatio: 1,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              mainAxisExtent: 320),
-                      itemBuilder: (context, index) {
-                        return MyCard(
-                          shadow: MyShadow(elevation: 0.5),
-                          child: Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              MyContainer.none(
-                                paddingAll: 8,
-                                borderRadiusAll: 5,
-                                child: PopupMenuButton(
-                                  offset: const Offset(0, 10),
-                                  position: PopupMenuPosition.under,
-                                  itemBuilder: (BuildContext context) => [
-                                    PopupMenuItem(
-                                        padding: MySpacing.xy(16, 8),
-                                        height: 10,
-                                        child: MyText.bodySmall("Action")),
-                                    PopupMenuItem(
-                                        padding: MySpacing.xy(16, 8),
-                                        height: 10,
-                                        child:
-                                            MyText.bodySmall("Another action")),
-                                    PopupMenuItem(
-                                        padding: MySpacing.xy(16, 8),
-                                        height: 10,
-                                        child: MyText.bodySmall(
-                                            "Somethings else here"))
-                                  ],
-                                  child: Icon(LucideIcons.ellipsis, size: 18),
-                                ),
-                              ),
-                              Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  MyContainer.roundBordered(
-                                    paddingAll: 4,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    child: MyContainer.rounded(
-                                      height: 100,
-                                      paddingAll: 0,
-                                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                                      child: Image.asset(
-                                        controller.discover[index].image,
-                                        fit: BoxFit.cover,
+                    FutureBuilder<List<AppUserModel>>(
+                      future: controller.fetchUsers(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text("Error: ${snapshot.error}"));
+                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(child: Text("No users found."));
+                        } else {
+                          final users = snapshot.data!;
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            itemCount: users.length,
+                            gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 350,
+                                // childAspectRatio: 1,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                mainAxisExtent: 320),
+                            itemBuilder: (context, index) {
+                              return MyCard(
+                                shadow: MyShadow(elevation: 0.5),
+                                child: Stack(
+                                  alignment: Alignment.topRight,
+                                  children: [
+                                    MyContainer.none(
+                                      paddingAll: 8,
+                                      borderRadiusAll: 5,
+                                      child: PopupMenuButton(
+                                        offset: const Offset(0, 10),
+                                        position: PopupMenuPosition.under,
+                                        itemBuilder: (BuildContext context) => [
+                                          PopupMenuItem(
+                                              padding: MySpacing.xy(16, 8),
+                                              height: 10,
+                                              child: MyText.bodySmall("Action")),
+                                          PopupMenuItem(
+                                              padding: MySpacing.xy(16, 8),
+                                              height: 10,
+                                              child:
+                                              MyText.bodySmall("Another action")),
+                                          PopupMenuItem(
+                                              padding: MySpacing.xy(16, 8),
+                                              height: 10,
+                                              child: MyText.bodySmall(
+                                                  "Somethings else here"))
+                                        ],
+                                        child: Icon(LucideIcons.ellipsis, size: 18),
                                       ),
                                     ),
-                                  ),
-                                  MyText.bodyMedium(
-                                    controller.discover[index].name,
-                                    fontSize: 20,
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(
-                                        LucideIcons.mail,
-                                        size: 16,
-                                      ),
-                                      MySpacing.width(8),
-                                      MyText.bodyMedium(
-                                        controller.opportunities[index].email,
-                                        fontSize: 16,
-                                        fontWeight: 500,
-                                        muted: true,
-                                      ),
-                                    ],
-                                  ),
-                                  MyText.bodyMedium(
-                                    controller.discover[index].address,
-                                    fontSize: 16,
-                                    muted: true,
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {},
-                                        icon: const Icon(
-                                          LucideIcons.linkedin,
-                                          color: Color(0xff0A66C2),
-                                          size: 20,
+                                    Column(
+                                      mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        MyContainer.roundBordered(
+                                          paddingAll: 4,
+                                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                                          child: MyContainer.rounded(
+                                            height: 100,
+                                            paddingAll: 0,
+                                            clipBehavior: Clip.antiAliasWithSaveLayer,
+                                            child: Image.network(
+                                              users[index].avatarUrl,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {},
-                                        icon: const Icon(
-                                          LucideIcons.facebook,
-                                          color: Color(0xff3b5998),
-                                          size: 20,
+                                        MyText.bodyMedium(
+                                          users[index].name,
+                                          fontSize: 20,
                                         ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {},
-                                        icon: const Icon(
-                                          LucideIcons.github,
-                                          color: Color(0xff3b5998),
-                                          size: 20,
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                              LucideIcons.mail,
+                                              size: 16,
+                                            ),
+                                            MySpacing.width(8),
+                                            Flexible(
+                                              child: MyText.bodyMedium(
+                                                users[index].email,
+                                                fontSize: 16,
+                                                fontWeight: 500,
+                                                muted: true,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
+                                        MyText.bodyMedium(
+                                          users[index].country,
+                                          fontSize: 16,
+                                          muted: true,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                              onPressed: () {},
+                                              icon: const Icon(
+                                                LucideIcons.linkedin,
+                                                color: Color(0xff0A66C2),
+                                                size: 20,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {},
+                                              icon: const Icon(
+                                                LucideIcons.facebook,
+                                                color: Color(0xff3b5998),
+                                                size: 20,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {},
+                                              icon: const Icon(
+                                                LucideIcons.github,
+                                                color: Color(0xff3b5998),
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
                   ],
