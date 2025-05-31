@@ -265,7 +265,7 @@ class _LeftBarState extends State<LeftBar> with SingleTickerProviderStateMixin, 
                   // //-----------------KanBan-----------------//
                   NavigationItem(
                     iconData: LucideIcons.square_kanban,
-                    title: "Kanban",
+                    title: "Support Tickets",
                     route: '/kanban',
                     isCondensed: isCondensed,
                   ),

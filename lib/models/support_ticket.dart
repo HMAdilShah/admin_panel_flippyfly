@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class SupportTicket {
   final String avatarUrl;
   final String description;
@@ -19,15 +21,26 @@ class SupportTicket {
 
   // Factory constructor to create from Map (e.g., from Firestore)
   factory SupportTicket.fromMap(Map<String, dynamic> map) {
+    final rawTimestamp = map['timestamp'];
+
+    DateTime parsedTimestamp;
+    if (rawTimestamp is Timestamp) {
+      parsedTimestamp = rawTimestamp.toDate(); // ✅ Convert from Firestore Timestamp
+    } else if (rawTimestamp is String) {
+      parsedTimestamp = DateTime.tryParse(rawTimestamp) ?? DateTime.now();
+    } else if (rawTimestamp is DateTime) {
+      parsedTimestamp = rawTimestamp;
+    } else {
+      parsedTimestamp = DateTime.now(); // fallback
+    }
+
     return SupportTicket(
       avatarUrl: map['avatarUrl'] ?? '',
       description: map['description'] ?? '',
       email: map['email'] ?? '',
       name: map['name'] ?? '',
       status: map['status'] ?? '',
-      timestamp: map['timestamp'] is DateTime
-          ? map['timestamp']
-          : DateTime.tryParse(map['timestamp'] ?? '') ?? DateTime.now(),
+      timestamp: parsedTimestamp,
       topic: map['topic'] ?? '',
     );
   }

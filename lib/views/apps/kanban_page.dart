@@ -31,6 +31,7 @@ class _KanBanPageState extends State<KanBanPage>
     super.initState();
     controller = Get.put(KanBanController());
     controller.boardController = AppFlowyBoardScrollController();
+    controller.fetchAndPopulateTickets();
     _controller = ScrollController();
   }
 
@@ -48,14 +49,14 @@ class _KanBanPageState extends State<KanBanPage>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     MyText.titleMedium(
-                      "KanBan",
+                      "Support Tickets",
                       fontSize: 18,
                       fontWeight: 600,
                     ),
                     MyBreadcrumb(
                       children: [
-                        MyBreadcrumbItem(name: 'Apps'),
-                        MyBreadcrumbItem(name: 'KanBan', active: true),
+                        MyBreadcrumbItem(name: 'Support Tickets',active: true),
+                        //MyBreadcrumbItem(name: 'KanBan', active: true),
                       ],
                     ),
                   ],
@@ -146,106 +147,113 @@ class _KanBanPageState extends State<KanBanPage>
             Row(
               children: [
                 const Icon(
-                  LucideIcons.luggage,
+                  LucideIcons.mail,
                   size: 16,
                 ),
                 MySpacing.width(8),
                 MyText.bodyMedium(item.jobTypeName, muted: true),
-                MySpacing.width(16),
-                Icon(
-                  LucideIcons.message_square,
-                  size: 20,
-                ),
-                MySpacing.width(8),
-                MyText.bodyMedium("${item.comment} comments", muted: true),
               ],
             ),
             MySpacing.height(12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    MyContainer.rounded(
-                      paddingAll: 0,
-                      height: 32,
-                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                      child: Image.asset(item.image),
-                    ),
-                    MySpacing.width(8),
-                    MyText.bodyMedium(
-                      item.name,
-                    ),
-                  ],
+                MyContainer.rounded(
+                  paddingAll: 0,
+                  height: 32,
+                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                  child: Image.network(item.image),
                 ),
-                MyContainer.none(
-                  paddingAll: 8,
-                  borderRadiusAll: 5,
-                  child: PopupMenuButton(
-                    offset: const Offset(-150, 15),
-                    position: PopupMenuPosition.under,
-                    itemBuilder: (BuildContext context) => [
-                      PopupMenuItem(
-                          padding: MySpacing.xy(16, 8),
-                          height: 10,
-                          child: Row(
-                            children: [
-                              Icon(
-                                LucideIcons.circle_plus,
-                                size: 20,
-                              ),
-                              MySpacing.width(8),
-                              MyText.bodySmall("Add People"),
-                            ],
-                          )),
-                      PopupMenuItem(
-                          padding: MySpacing.xy(16, 8),
-                          height: 10,
-                          child: Row(
-                            children: [
-                              Icon(
-                                LucideIcons.pencil,
-                                size: 20,
-                              ),
-                              MySpacing.width(8),
-                              MyText.bodySmall("Edit"),
-                            ],
-                          )),
-                      PopupMenuItem(
-                          padding: MySpacing.xy(16, 8),
-                          height: 10,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                LucideIcons.trash,
-                                size: 20,
-                              ),
-                              MySpacing.width(8),
-                              MyText.bodySmall("Delete"),
-                            ],
-                          )),
-                      PopupMenuItem(
-                          padding: MySpacing.xy(16, 8),
-                          height: 10,
-                          child: Row(
-                            children: [
-                              Icon(
-                                LucideIcons.log_out,
-                                size: 20,
-                              ),
-                              MySpacing.width(8),
-                              MyText.bodySmall("Leave"),
-                            ],
-                          )),
-                    ],
-                    child: Icon(
-                      LucideIcons.ellipsis_vertical,
-                      size: 18,
-                    ),
-                  ),
+                MySpacing.width(8),
+                MyText.bodyMedium(
+                  item.name,
                 ),
               ],
-            )
+            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     Row(
+            //       children: [
+            //         MyContainer.rounded(
+            //           paddingAll: 0,
+            //           height: 32,
+            //           clipBehavior: Clip.antiAliasWithSaveLayer,
+            //           child: Image.asset(item.image),
+            //         ),
+            //         MySpacing.width(8),
+            //         MyText.bodyMedium(
+            //           item.name,
+            //         ),
+            //       ],
+            //     ),
+            //     MyContainer.none(
+            //       paddingAll: 8,
+            //       borderRadiusAll: 5,
+            //       child: PopupMenuButton(
+            //         offset: const Offset(-150, 15),
+            //         position: PopupMenuPosition.under,
+            //         itemBuilder: (BuildContext context) => [
+            //           PopupMenuItem(
+            //               padding: MySpacing.xy(16, 8),
+            //               height: 10,
+            //               child: Row(
+            //                 children: [
+            //                   Icon(
+            //                     LucideIcons.circle_plus,
+            //                     size: 20,
+            //                   ),
+            //                   MySpacing.width(8),
+            //                   MyText.bodySmall("Add People"),
+            //                 ],
+            //               )),
+            //           PopupMenuItem(
+            //               padding: MySpacing.xy(16, 8),
+            //               height: 10,
+            //               child: Row(
+            //                 children: [
+            //                   Icon(
+            //                     LucideIcons.pencil,
+            //                     size: 20,
+            //                   ),
+            //                   MySpacing.width(8),
+            //                   MyText.bodySmall("Edit"),
+            //                 ],
+            //               )),
+            //           PopupMenuItem(
+            //               padding: MySpacing.xy(16, 8),
+            //               height: 10,
+            //               child: Row(
+            //                 children: [
+            //                   const Icon(
+            //                     LucideIcons.trash,
+            //                     size: 20,
+            //                   ),
+            //                   MySpacing.width(8),
+            //                   MyText.bodySmall("Delete"),
+            //                 ],
+            //               )),
+            //           PopupMenuItem(
+            //               padding: MySpacing.xy(16, 8),
+            //               height: 10,
+            //               child: Row(
+            //                 children: [
+            //                   Icon(
+            //                     LucideIcons.log_out,
+            //                     size: 20,
+            //                   ),
+            //                   MySpacing.width(8),
+            //                   MyText.bodySmall("Leave"),
+            //                 ],
+            //               )),
+            //         ],
+            //         child: Icon(
+            //           LucideIcons.ellipsis_vertical,
+            //           size: 18,
+            //         ),
+            //       ),
+            //     ),
+            //   ],
+            // )
           ],
         ),
       );
