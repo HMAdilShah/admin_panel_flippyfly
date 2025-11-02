@@ -190,7 +190,7 @@ class _ChatPageState extends State<ChatPage>
                                               child: Row(
                                                 children: [
                                                   Icon(
-                                                    LucideIcons.circle_help,
+                                                    LucideIcons.hand_helping,
                                                     size: 16,
                                                   ),
                                                   MySpacing.width(8),

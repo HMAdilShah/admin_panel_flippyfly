@@ -68,26 +68,25 @@ class _QuillEditorScreenState extends State<QuillEditorScreen>
                         child: MyContainer(
                           child: Column(
                             children: [
-                              QuillToolbar.simple(
-                                configurations:
-                                    QuillSimpleToolbarConfigurations(
-                                  controller: controller.quillController,
-                                  headerStyleType: HeaderStyleType.original,
-                                  sharedConfigurations:
-                                      QuillSharedConfigurations(
-                                          locale: Locale('de')),
-                                ),
+                              QuillSimpleToolbar(
+                                config: const QuillSimpleToolbarConfig(), controller: controller.quillController,
+                                //     QuillSimpleToolbarConfigurations(
+                                //   controller: controller.quillController,
+                                //   headerStyleType: HeaderStyleType.original,
+                                //   sharedConfigurations:
+                                //       QuillSharedConfigurations(
+                                //           locale: Locale('de')),
+                                // ),
                               ),
                               SingleChildScrollView(
                                 child: SizedBox(
                                   height: 300,
                                   child: QuillEditor.basic(
-                                    configurations: QuillEditorConfigurations(
-                                      controller: controller.quillController,
-                                      sharedConfigurations:
-                                          QuillSharedConfigurations(
-                                              locale: Locale('de')),
-                                    ),
+                                    config: QuillEditorConfig(
+                                      // sharedConfigurations:
+                                      //     QuillSharedConfigurations(
+                                      //         locale: Locale('de')),
+                                    ), controller: controller.quillController,
                                   ),
                                 ),
                               )

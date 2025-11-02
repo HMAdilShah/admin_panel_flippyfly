@@ -217,8 +217,8 @@ class _PostListState extends State<PostList>
                           return const Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
                           return Center(child: Text("Error: ${snapshot.error}"));
-                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Center(child: Text("No users found."));
+                        } else if (snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(child: Text("No post found."));
                         } else {
                           final users = snapshot.data!;
                           return GridView.builder(

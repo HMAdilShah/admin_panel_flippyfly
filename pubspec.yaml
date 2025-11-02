@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.2
+  sdk: ">=3.6.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -42,32 +42,32 @@ dependencies:
   provider: ^6.1.2
   url_launcher: ^6.3.0
   google_maps_flutter: ^2.9.0
-  syncfusion_flutter_charts: ^26.2.14
+  syncfusion_flutter_charts: ^31.2.3
   flutter_blurhash: ^0.8.2
   feather_icons: ^1.2.0
   url_strategy: ^0.3.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   flutter_colorpicker: ^1.1.0
   flutter_pagination: ^0.0.8
   qr_flutter: ^4.1.0
   file_picker: ^8.1.2
   font_awesome_flutter: ^10.7.0
   table_calendar: ^3.1.2
-  syncfusion_flutter_maps: ^26.2.14
+  syncfusion_flutter_maps: ^31.2.3
   maps_launcher: ^2.2.1
   socket_io_client: ^2.0.3+1
   get: ^4.6.6
-  syncfusion_flutter_calendar: ^26.2.14
-  syncfusion_flutter_datepicker: ^26.2.14
+  syncfusion_flutter_calendar: ^31.2.3
+  syncfusion_flutter_datepicker: ^31.2.3
   appflowy_board: ^0.1.2
-  timelines: ^0.1.0
+#  timelines: ^0.1.0
   countup: ^0.1.4
   image_picker: ^1.1.2
   flutter_lucide: ^1.4.0
   google_fonts: ^6.2.1
   fl_chart: ^0.69.0
   flutter_svg: ^2.0.10+1
-  flutter_quill: ^10.5.13
+  flutter_quill: ^11.5.0
 #  For Firebase and App
   firebase_core: ^3.13.0
   cloud_firestore: ^5.6.6

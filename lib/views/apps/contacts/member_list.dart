@@ -306,35 +306,35 @@ class _MemberListState extends State<MemberList>
                                           fontSize: 16,
                                           muted: true,
                                         ),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            IconButton(
-                                              onPressed: () {},
-                                              icon: const Icon(
-                                                LucideIcons.linkedin,
-                                                color: Color(0xff0A66C2),
-                                                size: 20,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () {},
-                                              icon: const Icon(
-                                                LucideIcons.facebook,
-                                                color: Color(0xff3b5998),
-                                                size: 20,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () {},
-                                              icon: const Icon(
-                                                LucideIcons.github,
-                                                color: Color(0xff3b5998),
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        // Row(
+                                        //   mainAxisAlignment: MainAxisAlignment.center,
+                                        //   children: [
+                                        //     IconButton(
+                                        //       onPressed: () {},
+                                        //       icon: const Icon(
+                                        //         LucideIcons.linkedin,
+                                        //         color: Color(0xff0A66C2),
+                                        //         size: 20,
+                                        //       ),
+                                        //     ),
+                                        //     IconButton(
+                                        //       onPressed: () {},
+                                        //       icon: const Icon(
+                                        //         LucideIcons.facebook,
+                                        //         color: Color(0xff3b5998),
+                                        //         size: 20,
+                                        //       ),
+                                        //     ),
+                                        //     IconButton(
+                                        //       onPressed: () {},
+                                        //       icon: const Icon(
+                                        //         LucideIcons.github,
+                                        //         color: Color(0xff3b5998),
+                                        //         size: 20,
+                                        //       ),
+                                        //     ),
+                                        //   ],
+                                        // ),
                                       ],
                                     ),
                                   ],

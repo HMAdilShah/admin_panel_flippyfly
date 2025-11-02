@@ -64,7 +64,7 @@ class AppTheme {
         actionsIconTheme: IconThemeData(color: Color(0xff495057))),
 
     /// Card Theme
-    cardTheme: CardTheme(color: Color(0xffffffff)),
+    cardTheme: CardThemeData(color: Color(0xffffffff)),
     cardColor: Color(0xffffffff),
 
     /// Colorscheme
@@ -92,10 +92,10 @@ class AppTheme {
 
     /// Bottom AppBar Theme
     bottomAppBarTheme:
-        BottomAppBarTheme(color: Color(0xffeeeeee), elevation: 2),
+        BottomAppBarThemeData(color: Color(0xffeeeeee), elevation: 2),
 
     /// Tab bar Theme
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       unselectedLabelColor: Color(0xff495057),
       labelColor: AppTheme.primaryColor,
       indicatorSize: TabBarIndicatorSize.label,
@@ -155,7 +155,7 @@ class AppTheme {
     appBarTheme: AppBarTheme(backgroundColor: Color(0xff262729)),
 
     /// Card Theme
-    cardTheme: CardTheme(color: Color(0xff1b1b1c)),
+    cardTheme: CardThemeData(color: Color(0xff1b1b1c)),
     cardColor: Color(0xff1b1b1c),
 
     /// Colorscheme
@@ -186,10 +186,10 @@ class AppTheme {
 
     /// Bottom AppBar Theme
     bottomAppBarTheme:
-        BottomAppBarTheme(color: Color(0xff464c52), elevation: 2),
+        BottomAppBarThemeData(color: Color(0xff464c52), elevation: 2),
 
     /// Tab bar Theme
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       unselectedLabelColor: Color(0xff495057),
       labelColor: AppTheme.primaryColor,
       indicatorSize: TabBarIndicatorSize.label,
