@@ -52,7 +52,7 @@ class LoginController extends MyController {
         String nextUrl =
             Uri.parse(ModalRoute.of(Get.context!)?.settings.name ?? "")
                     .queryParameters['next'] ??
-                "/contacts/members";
+                "/dashboard";
         Get.toNamed(
           nextUrl,
         );

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
 import 'package:webkit/controller/my_controller.dart';
 import 'package:webkit/helpers/widgets/my_form_validator.dart';
 import 'package:webkit/models/app_user.dart';
@@ -42,5 +43,9 @@ class MemberListController extends MyController {
   Future<List<Post>> fetchPosts() async {
     final snapshot = await FirebaseFirestore.instance.collection('posts').get();
     return snapshot.docs.map((doc) => Post.fromMap(doc.data())).toList();
+  }
+
+  void goToDashboard() {
+    Get.toNamed('/dashboard');
   }
 }

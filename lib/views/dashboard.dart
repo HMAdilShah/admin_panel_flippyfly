@@ -82,96 +82,7 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
                         wrapCrossAlignment: WrapCrossAlignment.start,
                         contentPadding: false,
                         children: [
-                          MyFlexItem(
-                            sizes: "lg-3",
-                            child: MyCard(
-                              shadow: MyShadow(elevation: 0.5),
-                              child: Column(
-                                children: [
-                                  MyContainer(
-                                    color: contentTheme.warning.withAlpha(28),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                LucideIcons.triangle_alert,
-                                                size: 20,
-                                                color: contentTheme.warning,
-                                              ),
-                                              MySpacing.width(8),
-                                              Expanded(
-                                                child: MyText.bodyMedium(
-                                                  "Your free trial expired in 21 days.",
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                        ),
-                                        MyText.bodyMedium(
-                                          "Upgrade",
-                                          fontWeight: 600,
-                                          decoration: TextDecoration.underline,
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  MySpacing.height(16),
-                                  MyFlex(
-                                    contentPadding: false,
-                                    children: [
-                                      MyFlexItem(
-                                        sizes: "lg-6",
-                                        child: MyContainer(
-                                          height: 200,
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                child: RichText(
-                                                  text: TextSpan(
-                                                    text: 'Upgrade Your Plan From a ',
-                                                    style: MyTextStyle.bodyMedium(fontSize: 16),
-                                                    children: const <TextSpan>[
-                                                      TextSpan(text: 'Free trial,', style: TextStyle(fontWeight: FontWeight.bold)),
-                                                      TextSpan(text: "to 'Premium plan'"),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              MySpacing.height(16),
-                                              MyButton(
-                                                onPressed: () {},
-                                                elevation: 0,
-                                                padding: MySpacing.xy(8, 12),
-                                                backgroundColor: contentTheme.primary,
-                                                borderRadiusAll: AppStyle.buttonRadius.medium,
-                                                child: MyText.bodySmall(
-                                                  "Upgrade Account!",
-                                                  fontSize: 12,
-                                                  color: contentTheme.onPrimary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      MyFlexItem(
-                                        sizes: "lg-6",
-                                        child: Image.asset(
-                                          Images.dashboard[0],
-                                          height: 205,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          // ===== FIRST COLUMN (4 CARDS) =====
                           MyFlexItem(
                             sizes: "lg-5",
                             child: MyFlex(
@@ -181,8 +92,16 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
                               children: [
                                 MyFlexItem(
                                   sizes: "lg-6",
-                                  child: buildCard(contentTheme.pink, LucideIcons.clock_4, "Reached", "\$152", LucideIcons.trending_up,
-                                      contentTheme.success, "1.25", "Last Month"),
+                                  child: buildCard(
+                                    contentTheme.pink,
+                                    LucideIcons.clock_4,
+                                    "Reached",
+                                    "\$152",
+                                    LucideIcons.trending_up,
+                                    contentTheme.success,
+                                    "1.25",
+                                    "Last Month",
+                                  ),
                                 ),
                                 MyFlexItem(
                                   sizes: "lg-6",
@@ -199,17 +118,72 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
                                 ),
                                 MyFlexItem(
                                   sizes: "lg-6",
-                                  child: buildCard(contentTheme.success, LucideIcons.chart_area, "Rich", "\$304", LucideIcons.trending_down,
-                                      contentTheme.red, "1.23", "Last Month"),
+                                  child: buildCard(
+                                    contentTheme.success,
+                                    LucideIcons.chart_area,
+                                    "Rich",
+                                    "\$304",
+                                    LucideIcons.trending_down,
+                                    contentTheme.red,
+                                    "1.23",
+                                    "Last Month",
+                                  ),
                                 ),
                                 MyFlexItem(
                                   sizes: "lg-6",
-                                  child: buildCard(contentTheme.warning, LucideIcons.shopping_cart, "Engagement", "\$189", LucideIcons.trending_up,
-                                      contentTheme.success, "0.2", "Last Day"),
+                                  child: buildCard(
+                                    contentTheme.warning,
+                                    LucideIcons.shopping_cart,
+                                    "Engagement",
+                                    "\$189",
+                                    LucideIcons.trending_up,
+                                    contentTheme.success,
+                                    "0.2",
+                                    "Last Day",
+                                  ),
                                 ),
                               ],
                             ),
                           ),
+
+                          MyFlexItem(
+                            sizes: "lg-3",
+                            child: MyFlex(
+                              runAlignment: WrapAlignment.start,
+                              wrapCrossAlignment: WrapCrossAlignment.start,
+                              contentPadding: false,
+                              children: [
+                                MyFlexItem(
+                                  sizes: "lg-12",
+                                  child: buildCard(
+                                    contentTheme.info,
+                                    LucideIcons.trending_up,
+                                    "Conversions",
+                                    "\$420",
+                                    LucideIcons.trending_up,
+                                    contentTheme.success,
+                                    "0.8",
+                                    "This Week",
+                                  ),
+                                ),
+                                MyFlexItem(
+                                  sizes: "lg-12",
+                                  child: buildCard(
+                                    contentTheme.secondary,
+                                    LucideIcons.user_check,
+                                    "Subscribers",
+                                    "12.4k",
+                                    LucideIcons.trending_down,
+                                    contentTheme.red,
+                                    "1.1",
+                                    "Last Month",
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // ===== SECOND COLUMN (CHART CARD) =====
                           MyFlexItem(
                             sizes: "lg-4",
                             child: MyCard(
@@ -247,12 +221,13 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
                                             ],
                                           ),
                                           IconButton(
-                                              onPressed: () {},
-                                              icon: Icon(
-                                                LucideIcons.move_right,
-                                                size: 16,
-                                                color: contentTheme.light,
-                                              ))
+                                            onPressed: () {},
+                                            icon: Icon(
+                                              LucideIcons.move_right,
+                                              size: 16,
+                                              color: contentTheme.light,
+                                            ),
+                                          )
                                         ],
                                       ),
                                       MySpacing.height(16),
@@ -327,7 +302,10 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
                                         labelStyle: const TextStyle(fontSize: 0),
                                       ),
                                       primaryYAxis: NumericAxis(
-                                          isVisible: false, labelStyle: const TextStyle(fontSize: 0), majorGridLines: const MajorGridLines(width: 0)),
+                                        isVisible: false,
+                                        labelStyle: const TextStyle(fontSize: 0),
+                                        majorGridLines: const MajorGridLines(width: 0),
+                                      ),
                                       series: [
                                         ColumnSeries<ChartSampleData, int>(
                                           width: 0.5,
@@ -347,6 +325,7 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
                               ),
                             ),
                           ),
+
                         ],
                       ),
                     ),
