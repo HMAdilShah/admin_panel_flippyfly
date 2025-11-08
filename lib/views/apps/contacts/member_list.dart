@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
@@ -392,4 +393,370 @@ class _UserDataSource extends DataTableSource {
   int get rowCount => users.length;
   @override
   int get selectedRowCount => 0;
+}
+*/
+
+
+
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:webkit/controller/apps/contact/member_list_controller.dart';
+import 'package:webkit/helpers/theme/app_style.dart';
+import 'package:webkit/helpers/utils/ui_mixins.dart';
+import 'package:webkit/helpers/widgets/my_breadcrumb.dart';
+import 'package:webkit/helpers/widgets/my_breadcrumb_item.dart';
+import 'package:webkit/helpers/widgets/my_button.dart';
+import 'package:webkit/helpers/widgets/my_container.dart';
+import 'package:webkit/helpers/widgets/my_spacing.dart';
+import 'package:webkit/helpers/widgets/my_text.dart';
+import 'package:webkit/helpers/widgets/responsive.dart';
+import 'package:webkit/models/app_user.dart';
+import 'package:webkit/views/layouts/layout.dart';
+
+class MemberList extends StatefulWidget {
+  const MemberList({super.key});
+
+  @override
+  State<MemberList> createState() => _MemberListState();
+}
+
+class _MemberListState extends State<MemberList>
+    with SingleTickerProviderStateMixin, UIMixin {
+  late MemberListController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(MemberListController());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color primary = const Color(0xFF835FFF);
+    final Color background = const Color(0xFFEFF1FE);
+    final Color accentPink = const Color(0xFFF71E64);
+    final Color darkText = const Color(0xFF222222);
+
+    return Layout(
+      child: GetBuilder(
+        init: controller,
+        builder: (controller) {
+          return Container(
+            color: background,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row
+                Padding(
+                  padding: MySpacing.x(flexSpacing),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      MyText.titleLarge(
+                        "User Management",
+                        fontWeight: 700,
+                        color: darkText,
+                      ),
+                      MyBreadcrumb(
+                        children: [
+                          MyBreadcrumbItem(name: "Users",),
+                          MyBreadcrumbItem(name: "List", active: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                MySpacing.height(flexSpacing),
+
+                // Users Table
+                Padding(
+                  padding: MySpacing.x(flexSpacing),
+                  child: FutureBuilder<List<AppUserModel>>(
+                    future: controller.fetchUsers(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: MyText.bodyMedium(
+                            "Error loading users: ${snapshot.error}",
+                            color: accentPink,
+                          ),
+                        );
+                      } else if (!snapshot.hasData ||
+                          snapshot.data!.isEmpty) {
+                        return  Center(
+                          child: MyText.bodyMedium("No users found."),
+                        );
+                      } else {
+                        final users = snapshot.data!;
+                        return MyContainer(
+                          paddingAll: 20,
+                          borderRadiusAll: 20,
+                          color: Colors.white,
+                          // shadow: AppStyle.boxShadow.md,
+                          child: PaginatedDataTable(
+                            header: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                MyText.titleMedium(
+                                  "All Registered Users",
+                                  color: darkText,
+                                  fontWeight: 600,
+                                ),
+                                MyButton(
+                                  onPressed: controller.goToDashboard,
+                                  elevation: 0,
+                                  padding: MySpacing.xy(20, 14),
+                                  backgroundColor: primary,
+                                  borderRadiusAll:
+                                  AppStyle.buttonRadius.medium,
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        LucideIcons.monitor,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                                      MySpacing.width(8),
+                                      MyText.labelMedium(
+                                        "Dashboard",
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            arrowHeadColor: primary,
+                            columnSpacing: 80,
+                            horizontalMargin: 28,
+                            rowsPerPage: 10,
+                            columns: [
+                              DataColumn(
+                                label: MyText.bodyMedium('Image',
+                                    fontWeight: 600, color: darkText),
+                              ),
+                              DataColumn(
+                                label: MyText.bodyMedium('Name',
+                                    fontWeight: 600, color: darkText),
+                              ),
+                              DataColumn(
+                                label: MyText.bodyMedium('Email',
+                                    fontWeight: 600, color: darkText),
+                              ),
+                              DataColumn(
+                                label: MyText.bodyMedium('Country',
+                                    fontWeight: 600, color: darkText),
+                              ),
+                              DataColumn(
+                                label: MyText.bodyMedium('Action',
+                                    fontWeight: 600, color: darkText),
+                              ),
+                            ],
+                            source: _UserDataSource(users, controller, context,
+                                primary, accentPink, darkText),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _UserDataSource extends DataTableSource {
+  final List<AppUserModel> users;
+  final dynamic controller;
+  final BuildContext context;
+  final Color primary;
+  final Color accentPink;
+  final Color darkText;
+
+  _UserDataSource(
+      this.users,
+      this.controller,
+      this.context,
+      this.primary,
+      this.accentPink,
+      this.darkText,
+      );
+
+  @override
+  DataRow getRow(int index) {
+    final user = users[index];
+    return DataRow(
+      cells: [
+        DataCell(
+          Container(
+            padding: const EdgeInsets.all(5.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                user.avatarUrl,
+                height: 50,
+                width: 50,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+        DataCell(MyText.bodyMedium(user.name,
+            fontSize: 16, color: darkText, fontWeight: 500)),
+        DataCell(MyText.bodyMedium(user.email,
+            fontSize: 15, color: Colors.black54)),
+        DataCell(MyText.bodyMedium(user.country,
+            fontSize: 15, color: Colors.black54)),
+        DataCell(
+          Row(
+            children: [
+              MyButton(
+                onPressed: () {
+                  Get.to(() => _ProfileViewPage(user: user));
+                },
+                elevation: 0,
+                padding: MySpacing.xy(12, 8),
+                backgroundColor: primary.withOpacity(0.1),
+                borderRadiusAll: 10,
+                child: MyText.bodySmall(
+                  "View Profile",
+                  color: primary,
+                  fontWeight: 600,
+                ),
+              ),
+              MySpacing.width(8),
+              MyButton(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: MyText.titleMedium(
+                        "Confirm Block",
+                        color: accentPink,
+                        fontWeight: 700,
+                      ),
+                      content: MyText.bodyMedium(
+                        "Are you sure you want to block ${user.name}?",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text("Block",
+                              style: TextStyle(color: accentPink)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    controller.blockUser(user);
+                  }
+                },
+                elevation: 0,
+                padding: MySpacing.xy(12, 8),
+                backgroundColor: accentPink.withOpacity(0.12),
+                borderRadiusAll: 10,
+                child: MyText.bodySmall(
+                  "Block",
+                  color: accentPink,
+                  fontWeight: 600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+  @override
+  int get rowCount => users.length;
+  @override
+  int get selectedRowCount => 0;
+}
+
+/// Profile View Page
+class _ProfileViewPage extends StatelessWidget {
+  final AppUserModel user;
+
+  const _ProfileViewPage({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color primary = const Color(0xFF835FFF);
+    final Color background = const Color(0xFFEFF1FE);
+    final Color darkText = const Color(0xFF222222);
+
+    return Scaffold(
+      backgroundColor: background,
+      appBar: AppBar(
+        title: Text("${user.name}'s Profile"),
+        backgroundColor: primary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: MyContainer(
+            paddingAll: 24,
+            borderRadiusAll: 20,
+            color: Colors.white,
+            // shadow: AppStyle.boxShadow.lg,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(60),
+                  child: Image.network(
+                    user.avatarUrl,
+                    height: 100,
+                    width: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                MySpacing.height(16),
+                MyText.titleLarge(user.name,
+                    color: darkText, fontWeight: 700),
+                MyText.bodyMedium(user.email,
+                    color: Colors.black54, fontWeight: 500),
+                MySpacing.height(12),
+                MyText.bodyMedium("Country: ${user.country}",
+                    color: darkText),
+                MySpacing.height(24),
+                MyButton(
+                  onPressed: () => Get.back(),
+                  backgroundColor: primary,
+                  borderRadiusAll: 12,
+                  padding: MySpacing.xy(32, 14),
+                  child: MyText.bodyMedium(
+                    "Back to List",
+                    color: Colors.white,
+                    fontWeight: 600,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

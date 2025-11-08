@@ -4,10 +4,16 @@ import 'package:webkit/views/apps/CRM/contacts_page.dart';
 import 'package:webkit/views/apps/CRM/opportunities.dart';
 import 'package:webkit/views/apps/calender.dart';
 import 'package:webkit/views/apps/chat_page.dart';
+import 'package:webkit/views/apps/contacts/banner_management.dart';
+import 'package:webkit/views/apps/contacts/create_plan_screen.dart';
 import 'package:webkit/views/apps/contacts/edit_profile.dart';
+import 'package:webkit/views/apps/contacts/how_it_works.dart';
 import 'package:webkit/views/apps/contacts/member_list.dart';
+import 'package:webkit/views/apps/contacts/membership_management.dart';
+import 'package:webkit/views/apps/contacts/plans_overview.dart';
 import 'package:webkit/views/apps/contacts/post.dart';
 import 'package:webkit/views/apps/contacts/profile.dart';
+import 'package:webkit/views/apps/contacts/support_tickets_screen.dart';
 import 'package:webkit/views/apps/ecommerce/add_product.dart';
 import 'package:webkit/views/apps/ecommerce/customers.dart';
 import 'package:webkit/views/apps/ecommerce/invoice_page.dart';
@@ -168,6 +174,10 @@ getPageRoute() {
         name: '/kanban',
         page: () => KanBanPage(),
         middlewares: [AuthMiddleware()]),
+    GetPage(
+        name: '/contacts/support_tickets_screen',
+        page: () => SupportTicketsScreen(),
+        middlewares: [AuthMiddleware()]),
 
     ///---------------- Projects ----------------///
     GetPage(
@@ -189,10 +199,38 @@ getPageRoute() {
         name: '/contacts/profile',
         page: () => ProfilePage(),
         middlewares: [AuthMiddleware()]),
+
+    GetPage(
+        name: '/contacts/banner_management',
+        page: () => BannerManagement(),
+        middlewares: [AuthMiddleware()]),
+    GetPage(
+        name: '/contacts/how_it_works',
+        page: () => HowItWorks(),
+        middlewares: [AuthMiddleware()]),
+    GetPage(
+        name: '/contacts/create_plan',
+        page: () => CreatePlanScreen(),
+        middlewares: [AuthMiddleware()]),
+
+
+
+
+
     GetPage(
         name: '/contacts/members',
         page: () => MemberList(),
         middlewares: [AuthMiddleware()]),
+
+    GetPage(
+        name: '/contacts/membership_management',
+        page: () => MembershipManagement(),
+        middlewares: [AuthMiddleware()]),
+    GetPage(
+        name: '/contacts/plans_overview',
+        page: () => PlansOverview(),
+        middlewares: [AuthMiddleware()]),
+
 
     GetPage(
         name: '/contacts/edit-profile',

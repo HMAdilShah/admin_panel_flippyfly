@@ -11,7 +11,9 @@ class LoginController extends MyController {
   bool showPassword = false, loading = false, isChecked = false;
 
   final String _dummyEmail = "admin@flipifly.com";
+  // final String _dummyEmail = "";
   final String _dummyPassword = "1234567";
+  // final String _dummyPassword = "";
 
   @override
   void onInit() {
