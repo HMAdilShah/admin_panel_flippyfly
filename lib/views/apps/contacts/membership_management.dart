@@ -28,6 +28,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
   final _premiumDesc = TextEditingController();
   final _premiumMonthly = TextEditingController();
   final _premiumAnnual = TextEditingController();
+  final _premiumDiscount = TextEditingController();
 
   bool _isSaving = false;
   final _db = FirebaseFirestore.instance;
@@ -63,6 +64,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
     _premiumDesc.text = data['description'] ?? 'Access to all exclusive features.';
     _premiumMonthly.text = (data['monthlyPrice'] ?? '').toString();
     _premiumAnnual.text = (data['annualPrice'] ?? '').toString();
+    _premiumDiscount.text = (data['discountPercent'] ?? '').toString();
 
     showDialog(
       context: context,
@@ -127,6 +129,17 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                     ),
                   ],
                 ),
+                MySpacing.height(12),
+                TextField(
+                  controller: _premiumDiscount,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Discount (%)",
+                    filled: true,
+                    fillColor: background,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
                 MySpacing.height(18),
                 Align(
                   alignment: Alignment.centerRight,
@@ -136,12 +149,14 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                         : () async {
                       final monthly = double.tryParse(_premiumMonthly.text.trim()) ?? 0;
                       final annual = double.tryParse(_premiumAnnual.text.trim()) ?? 0;
+                      final discount = double.tryParse(_premiumDiscount.text.trim()) ?? 0;
                       await _saveMembership('premium', {
                         'title': _premiumTitle.text.trim(),
                         'description': _premiumDesc.text.trim(),
                         'monthlyPrice': monthly,
                         'annualPrice': annual,
-                        'type': 'premium'
+                        'discountPercent': discount,
+                        'type': 'premium',
                       });
                       Navigator.pop(context);
                     },
@@ -195,7 +210,13 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                 {'title': 'Free Plan', 'description': 'Basic access to explore and use limited features.'};
 
             final premiumData = premiumDoc?.data() as Map<String, dynamic>? ??
-                {'title': 'Premium Plan', 'description': 'Unlock full access and exclusive tools.', 'monthlyPrice': 1999, 'annualPrice': 19999};
+                {
+                  'title': 'Premium Plan',
+                  'description': 'Unlock full access and exclusive tools.',
+                  'monthlyPrice': 1999,
+                  'annualPrice': 19999,
+                  'discountPercent': 0
+                };
 
             Widget buildCard({
               required String title,
@@ -203,6 +224,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
               bool isPremium = false,
               double? monthly,
               double? annual,
+              double? discount,
               VoidCallback? onEdit,
             }) {
               return Container(
@@ -237,6 +259,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                           _buildInfoRow(LucideIcons.wallet, "Monthly", "PKR ${monthly?.toStringAsFixed(0) ?? '0'}"),
                           MySpacing.width(12),
                           _buildInfoRow(LucideIcons.calendar, "Annual", "PKR ${annual?.toStringAsFixed(0) ?? '0'}"),
+                          MySpacing.width(12),
+                          _buildInfoRow(LucideIcons.tag, "Discount", "${discount?.toStringAsFixed(0) ?? '0'}%"),
                         ],
                       )
                     else
@@ -284,6 +308,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                         isPremium: true,
                         monthly: premiumData['monthlyPrice']?.toDouble(),
                         annual: premiumData['annualPrice']?.toDouble(),
+                        discount: premiumData['discountPercent']?.toDouble(),
                         onEdit: () => _openEditPremiumModal(premiumDoc),
                       ),
                     ),
@@ -299,6 +324,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                       isPremium: true,
                       monthly: premiumData['monthlyPrice']?.toDouble(),
                       annual: premiumData['annualPrice']?.toDouble(),
+                      discount: premiumData['discountPercent']?.toDouble(),
                       onEdit: () => _openEditPremiumModal(premiumDoc),
                     ),
                   ],
@@ -346,6 +372,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                                   'description': 'Unlock full access and exclusive tools.',
                                   'monthlyPrice': 1999,
                                   'annualPrice': 19999,
+                                  'discountPercent': 0,
                                   'type': 'premium'
                                 });
                               }

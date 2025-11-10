@@ -31,7 +31,7 @@ class _MemberListState extends State<MemberList> {
     if (_searchQuery.trim().isEmpty) return list;
     final q = _searchQuery.toLowerCase();
     return list.where((u) {
-      return (u.name.toLowerCase().contains(q) || (u.phone.toLowerCase().contains(q)));
+      return (u.name.toLowerCase().contains(q) || u.phone.toLowerCase().contains(q));
     }).toList();
   }
 
@@ -96,7 +96,6 @@ class _MemberListState extends State<MemberList> {
                   MySpacing.width(12),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // quick sample: create dummy user (for testing)
                       FirebaseFirestore.instance.collection('users').add({
                         'name': 'Demo User ${DateTime.now().millisecondsSinceEpoch % 1000}',
                         'email': 'demo${DateTime.now().millisecondsSinceEpoch % 1000}@example.com',
@@ -115,7 +114,21 @@ class _MemberListState extends State<MemberList> {
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                  )
+                  ),
+                /*  ElevatedButton.icon(
+                    onPressed: () async {
+                      // Call function to create dummy plans for all users
+                      await _createDummyPlans();
+                    },
+                    icon: const Icon(Icons.add_chart),
+                    label: const Text("Create Dummy Plans"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),*/
+
                 ],
               ),
             ),
@@ -123,94 +136,136 @@ class _MemberListState extends State<MemberList> {
             MySpacing.height(18),
 
             // Users list
-            Expanded(
-              child: Obx(() {
-                if (controller.loading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final filtered = _filter(controller.users);
-                if (filtered.isEmpty) {
-                  return Center(child: MyText.bodyMedium("No users match your search."));
-                }
+            // Users list
+            Obx(() {
+              if (controller.loading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                // Fancy list (cards). Serial no. shown.
-                return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, idx) {
-                    final user = filtered[idx];
-                    final serial = idx + 1;
-                    return GestureDetector(
-                      onTap: () => Get.to(() => ProfileViewPage(userId: user.id)),
+              final filtered = _filter(controller.users);
+              if (filtered.isEmpty) {
+                return Center(child: MyText.bodyMedium("No users match your search."));
+              }
+
+              return ListView.separated(
+                physics: const NeverScrollableScrollPhysics(), // disable inner scrolling
+                shrinkWrap: true, // allow it to take only as much height as needed
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                itemCount: filtered.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, idx) {
+                  final user = filtered[idx];
+                  final serial = idx + 1;
+                  return GestureDetector(
+                    onTap: () => Get.to(() => ProfileViewPage(userId: user.id)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
+                        border: Border.all(color: const Color(0xFFF0EEFF)),
+                      ),
+                      padding: const EdgeInsets.all(14),
+
                       child: Container(
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
-                          border: Border.all(color: const Color(0xFFF0EEFF)),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.all(14),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // serial
+                            // Serial
                             Container(
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: primary.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(10),
+                                color: primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Center(child: MyText.bodyMedium("#$serial", color: primary, fontWeight: 700)),
+                              child: Center(
+                                child: MyText.bodyMedium("#$serial", color: primary, fontWeight: 700),
+                              ),
                             ),
-                            MySpacing.width(12),
+                            MySpacing.width(16),
 
-                            // avatar + main info
+                            // Avatar
                             CircleAvatar(
-                              radius: 28,
+                              radius: 30,
                               backgroundColor: Colors.grey[200],
                               backgroundImage: user.avatarUrl.isNotEmpty ? NetworkImage(user.avatarUrl) : null,
-                              child: user.avatarUrl.isEmpty ? const Icon(Icons.person, color: Colors.white) : null,
+                              child: user.avatarUrl.isEmpty
+                                  ? const Icon(Icons.person, size: 28, color: Colors.white)
+                                  : null,
                             ),
-                            MySpacing.width(12),
+                            MySpacing.width(16),
 
-                            // name / email / phone / country
+                            // Info Column
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(children: [
-                                    Expanded(child: MyText.bodyMedium(user.name, fontWeight: 700, color: darkText)),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: user.userStatus.toLowerCase() == 'blocked' ? Colors.red.withOpacity(0.08) : Colors.green.withOpacity(0.06),
-                                        borderRadius: BorderRadius.circular(8),
+                                  // Name
+                                  Row(
+                                    children: [
+                                      MyText.bodyMedium(user.name, fontWeight: 700, color: darkText),
+                                      MySpacing.width(6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: (user.userStatus.toLowerCase() == 'blocked' ? Colors.red : Colors.green).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: MyText.bodySmall(
+                                          user.userStatus.isEmpty ? 'Active' : user.userStatus,
+                                          color: user.userStatus.toLowerCase() == 'blocked' ? Colors.red : Colors.green[800],
+                                          fontWeight: 600,
+                                        ),
                                       ),
-                                      child: MyText.bodySmall(user.userStatus.isEmpty ? 'active' : user.userStatus, color: user.userStatus.toLowerCase() == 'blocked' ? Colors.red : Colors.green[800]),
-                                    )
-                                  ]),
+                                    ],
+                                  ),
+
+
+                                  // Email
+                                  Text(user.email, style: const TextStyle(color: Colors.black54), overflow: TextOverflow.ellipsis),
                                   MySpacing.height(6),
-                                  Row(children: [
-                                    Expanded(child: Text(user.email, style: const TextStyle(color: Colors.black54))),
-                                    MySpacing.width(8),
-                                    Text(user.phone, style: const TextStyle(color: Colors.black54)),
-                                  ]),
+
+                                  // Phone with icon
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone, size: 16, color: Colors.green),
+                                      MySpacing.width(6),
+                                      Text(user.phone, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
 
-                            // actions: view / block
+                            // Status + Buttons Column
                             Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                // View Button
                                 MyButton(
                                   onPressed: () => Get.to(() => ProfileViewPage(userId: user.id)),
-                                  backgroundColor: primary.withOpacity(0.12),
-                                  borderRadiusAll: 10,
-                                  padding: MySpacing.xy(12, 8),
+                                  backgroundColor: primary.withOpacity(0.15),
+                                  borderRadiusAll: 12,
+                                  padding: MySpacing.xy(14, 10),
                                   child: MyText.bodySmall("View", color: primary, fontWeight: 700),
                                 ),
-                                MySpacing.height(8),
+                                MySpacing.height(6),
+
+                                // Block Button
                                 MyButton(
                                   onPressed: () async {
                                     final confirm = await showDialog<bool>(
@@ -227,29 +282,69 @@ class _MemberListState extends State<MemberList> {
                                     );
                                     if (confirm == true) controller.blockUser(user);
                                   },
-                                  backgroundColor: accentPink.withOpacity(0.08),
-                                  borderRadiusAll: 10,
-                                  padding: MySpacing.xy(12, 8),
-                                  child: MyText.bodySmall("Block", color: accentPink),
+                                  backgroundColor: accentPink.withOpacity(0.15),
+                                  borderRadiusAll: 12,
+                                  padding: MySpacing.xy(14, 10),
+                                  child: MyText.bodySmall("Block", color: accentPink, fontWeight: 700),
                                 ),
                               ],
-                            )
+                            ),
                           ],
                         ),
                       ),
-                    );
-                  },
-                );
-              }),
-            ),
+
+                    ),
+                  );
+                },
+              );
+            }),
+
+
+
           ],
         ),
       ),
     );
   }
+  Future<void> _createDummyPlans() async {
+    final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
+
+    for (var userDoc in usersSnapshot.docs) {
+      final userId = userDoc.id;
+
+      // Generate 2-3 dummy plans per user
+      for (int i = 1; i <= 3; i++) {
+        final now = DateTime.now();
+        final plan = UserPlan(
+          id: '', // Firestore will generate ID
+          name: "Plan $i",
+          amount: (i * 1000).toDouble(),
+          paymentStatus: i % 2 == 0 ? 'paid' : 'pending',
+          purchaseDate: now.subtract(Duration(days: i * 10)),
+          expiryDate: now.add(Duration(days: i * 30)),
+        );
+
+        // Add to subcollection 'purchases' for each user
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('purchases')
+            .add(plan.toMap());
+      }
+    }
+
+    Get.snackbar(
+      "Success",
+      "Dummy plans created for all users",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.withOpacity(0.8),
+      colorText: Colors.white,
+    );
+  }
+
 }
 
-/// Profile view that fetches user details and their purchases
+/// Profile view page with purchased plans and payment status
 class ProfileViewPage extends StatefulWidget {
   final String userId;
   const ProfileViewPage({super.key, required this.userId});
@@ -286,16 +381,15 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       });
       return;
     }
-    userData = (doc.data() ?? {}) as Map<String, dynamic>;
+    userData = doc.data() ?? {};
 
-    // Try to read subcollection `purchases` or `plans`
     final sub = await _db.collection('users').doc(widget.userId).collection('purchases').orderBy('purchase_date', descending: true).get();
-    purchases = sub.docs.map((d) => UserPlan.fromMap(d.id, (d.data() as Map<String, dynamic>))).toList();
+    purchases = sub.docs.map((d) => UserPlan.fromMap(d.id, d.data() as Map<String, dynamic>)).toList();
 
-    // If subcollection empty, also check `userData['purchases']` (embedded list)
+    // fallback to embedded purchases
     if (purchases.isEmpty && userData!['purchases'] is List) {
       final list = (userData!['purchases'] as List).cast<Map<String, dynamic>>();
-      purchases = List.generate(list.length, (i) => UserPlan.fromMap('p_${i}', list[i]));
+      purchases = List.generate(list.length, (i) => UserPlan.fromMap('p_$i', list[i]));
     }
 
     setState(() => loading = false);
@@ -303,17 +397,9 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
 
   Color _paymentColor(String s) {
     s = s.toLowerCase();
-    if (s == 'paid' || s == 'paid_success' || s == 'completed') return Colors.green;
+    if (s == 'paid' || s == 'completed') return Colors.green;
     if (s == 'pending' || s == 'partial') return Colors.orange;
     return Colors.red;
-  }
-
-  Future<void> _updatePurchaseStatus(String purchaseId, String status) async {
-    // update subcollection doc
-    await _db.collection('users').doc(widget.userId).collection('purchases').doc(purchaseId).update({'payment_status': status});
-    // reload
-    await _loadUserAndPurchases();
-    Get.snackbar('Updated', 'Payment status updated', backgroundColor: primary.withOpacity(0.08), colorText: primary);
   }
 
   @override
@@ -323,7 +409,6 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       appBar: AppBar(
         title: Text("${userData?['name'] ?? 'User'}'s Profile"),
         backgroundColor: primary,
-        elevation: 0,
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
@@ -333,7 +418,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top card with avatar & basic info
+              // User info card
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)]),
@@ -341,43 +426,36 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                   children: [
                     CircleAvatar(
                       radius: 44,
-                      backgroundImage: (userData?['avatar_url'] ?? '').isNotEmpty ? NetworkImage(userData?['avatar_url']) as ImageProvider : null,
+                      backgroundImage: (userData?['avatar_url'] ?? '').isNotEmpty
+                          ? NetworkImage(userData?['avatar_url'] ?? '')
+                          : null,
                       backgroundColor: Colors.grey[200],
                       child: (userData?['avatar_url'] ?? '').isEmpty ? const Icon(Icons.person, size: 36, color: Colors.white) : null,
                     ),
                     MySpacing.width(16),
                     Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        MyText.titleLarge(userData?['name'] ?? '-', fontWeight: 700, color: darkText),
-                        MySpacing.height(6),
-                        MyText.bodyMedium(userData?['email'] ?? '-', color: Colors.black54),
-                        MySpacing.height(6),
-                        MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}", color: Colors.black54),
-                        MySpacing.height(8),
-                        Row(children: [
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MyText.titleLarge(userData?['name'] ?? '-', fontWeight: 700, color: darkText),
+                          MySpacing.height(6),
+                          MyText.bodyMedium(userData?['email'] ?? '-', color: Colors.black54),
+                          MySpacing.height(6),
+                          MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}", color: Colors.black54),
+                          MySpacing.height(8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(color: primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                             child: MyText.bodySmall(userData?['user_status'] ?? 'active', color: primary, fontWeight: 700),
                           ),
-                          MySpacing.width(12),
-                          MyButton(
-                            onPressed: () => Navigator.pop(context),
-                            backgroundColor: primary,
-                            borderRadiusAll: 10,
-                            padding: MySpacing.xy(12, 8),
-                            child: MyText.bodySmall("Back", color: Colors.white),
-                          )
-                        ]),
-                      ]),
-                    )
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
 
               MySpacing.height(20),
-
-              // Plans summary
               MyText.titleMedium("Purchased Plans", fontWeight: 700, color: darkText),
               MySpacing.height(12),
 
@@ -385,11 +463,12 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                  child: MyText.bodyMedium("No purchased plans found for this user.", color: Colors.black54),
+                  child: MyText.bodyMedium("No purchased plans found.", color: Colors.black54),
                 )
               else
                 Column(
-                  children: purchases.map((p) {
+                  children: List.generate(purchases.length, (idx) {
+                    final p = purchases[idx];
                     final payment = p.paymentStatus;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -398,89 +477,83 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // thumbnail / icon
+                          // serial
                           Container(
-                            width: 72,
-                            height: 72,
+                            width: 36,
+                            height: 36,
                             decoration: BoxDecoration(color: primary.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-                            child: Center(child: MyText.bodyMedium(p.name.substring(0, 1).toUpperCase(), color: primary, fontWeight: 800)),
+                            child: Center(child: MyText.bodySmall("#${idx + 1}", color: primary, fontWeight: 700)),
                           ),
                           MySpacing.width(12),
                           Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                MyText.titleSmall(p.name, fontWeight: 700, color: darkText),
-                                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                                  MyText.bodySmall("PKR ${p.amount.toStringAsFixed(0)}", color: Colors.black87),
-                                  MySpacing.height(6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                  MyText.titleSmall(p.name, fontWeight: 700, color: darkText),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(color: _paymentColor(payment).withOpacity(0.14), borderRadius: BorderRadius.circular(8)),
                                     child: MyText.bodySmall(payment.toUpperCase(), color: _paymentColor(payment), fontWeight: 700),
-                                  )
-                                ])
-                              ]),
-                              MySpacing.height(8),
-                              MyText.bodySmall("Purchased: ${p.purchaseDate != null ? p.purchaseDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
-                              MySpacing.height(4),
-                              MyText.bodySmall("Expires: ${p.expiryDate != null ? p.expiryDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
-                              MySpacing.height(8),
-                              Row(children: [
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    // quick toggle for demo: paid <-> due
-                                    final newStatus = (payment.toLowerCase() == 'paid') ? 'due' : 'paid';
-                                    await _updatePurchaseStatus(p.id, newStatus);
-                                  },
-                                  style: ElevatedButton.styleFrom(backgroundColor: primary),
-                                  child: MyText.bodySmall("Toggle Paid", color: Colors.white),
-                                ),
-                                MySpacing.width(8),
-                                OutlinedButton(
-                                  onPressed: () {
-                                    // navigate to plan detail if needed
-                                  },
-                                  child: const Text("View Plan"),
-                                ),
-                              ])
-                            ]),
-                          )
+                                  ),
+                                ]),
+                                MySpacing.height(6),
+                                MyText.bodySmall("Amount: PKR ${p.amount.toStringAsFixed(0)}", color: Colors.black54),
+                                MySpacing.height(4),
+                                MyText.bodySmall("Purchased: ${p.purchaseDate != null ? p.purchaseDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
+                                MySpacing.height(2),
+                                MyText.bodySmall("Expires: ${p.expiryDate != null ? p.expiryDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ),
-
-              MySpacing.height(28),
-
-              // Optionally, admin actions — send notification / add credit etc.
-              MyText.titleMedium("Admin Actions", fontWeight: 700, color: darkText),
-              MySpacing.height(12),
-              Row(children: [
-                MyButton(
-                  onPressed: () {
-                    // example: add credit or manual plan
-                  },
-                  backgroundColor: primary,
-                  borderRadiusAll: 10,
-                  padding: MySpacing.xy(12, 10),
-                  child: MyText.bodySmall("Grant Plan", color: Colors.white),
-                ),
-                MySpacing.width(12),
-                MyButton(
-                  onPressed: () {
-                    // example: mark user as VIP
-                  },
-                  backgroundColor: Colors.white,
-                  borderRadiusAll: 10,
-                  padding: MySpacing.xy(12, 10),
-                  child: MyText.bodySmall("Other Action", color: primary),
-                )
-              ])
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class UserPlan {
+  final String id;
+  final String name;
+  final double amount;
+  final String paymentStatus;
+  final DateTime? purchaseDate;
+  final DateTime? expiryDate;
+
+  UserPlan({
+    required this.id,
+    required this.name,
+    required this.amount,
+    required this.paymentStatus,
+    this.purchaseDate,
+    this.expiryDate,
+  });
+
+  factory UserPlan.fromMap(String id, Map<String, dynamic> map) {
+    return UserPlan(
+      id: id,
+      name: map['plan_name'] ?? 'Unnamed Plan',
+      amount: (map['amount'] ?? 0).toDouble(),
+      paymentStatus: map['payment_status'] ?? 'pending',
+      purchaseDate: map['purchase_date'] != null ? (map['purchase_date'] as Timestamp).toDate() : null,
+      expiryDate: map['expiry_date'] != null ? (map['expiry_date'] as Timestamp).toDate() : null,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'plan_name': name,
+      'amount': amount,
+      'payment_status': paymentStatus,
+      'purchase_date': purchaseDate != null ? Timestamp.fromDate(purchaseDate!) : null,
+      'expiry_date': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
+    };
   }
 }

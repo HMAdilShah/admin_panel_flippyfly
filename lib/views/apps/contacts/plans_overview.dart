@@ -247,8 +247,8 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
                     MySpacing.width(12),
                     MyButton(
                       onPressed: () {
-                        // Get.to(() => PlanEditScreen(planId: plan['docId']),
-                        //     arguments: {'planId': plan['docId']});
+                        Get.to(() => PlanEditScreen(planId: plan['docId']),
+                            arguments: {'planId': plan['docId']});
                       },
                       backgroundColor: primary,
                       borderRadiusAll: 10,
@@ -333,7 +333,7 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
                   }
 
                   if (!snap.hasData || snap.data!.docs.isEmpty) {
-                    return MyContainer(
+                    /*return MyContainer(
                       color: Colors.white,
                       borderRadiusAll: 12,
                       paddingAll: 22,
@@ -361,6 +361,32 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
                           )
                         ],
                       ),
+                    );*/
+
+                    return MyContainer(
+                      color: Colors.white,
+                      borderRadiusAll: 12,
+                      paddingAll: 22,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          MyText.titleMedium("No plans yet", fontWeight: 700),
+                          MySpacing.height(8),
+                          MyText.bodySmall(
+                              "Create a new plan using the button on the top right."),
+                          MySpacing.height(12),
+                          MyButton(
+                            onPressed: () async {
+                              final result = await Get.toNamed('/contacts/create_plan');
+                              if (result == true) setState(() {});
+                            },
+                            backgroundColor: primary,
+                            borderRadiusAll: 10,
+                            padding: MySpacing.xy(16, 10),
+                            child: MyText.bodyMedium("Create Plan", color: Colors.white),
+                          ),
+                        ],
+                      ),
                     );
                   }
 
@@ -373,7 +399,7 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
 
                   return Column(
                     children: [
-                      SizedBox(
+                      /*SizedBox(
                         height: 400, // slightly increased for safe space
                         child: PageView.builder(
                           controller: _pageController,
@@ -383,24 +409,35 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
                             return _planCard(plans[index], index);
                           },
                         ),
+                      ),*/
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(), // Scroll handled by outer SingleChildScrollView
+                        itemCount: plans.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: _planCard(plans[index], index),
+                          );
+                        },
                       ),
                       MySpacing.height(12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(plans.length, (i) {
-                          final bool selected = i == _pageIndex;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 220),
-                            margin: const EdgeInsets.symmetric(horizontal: 6),
-                            height: selected ? 10 : 8,
-                            width: selected ? 28 : 8,
-                            decoration: BoxDecoration(
-                              color: selected ? primary : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          );
-                        }),
-                      ),
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.center,
+                      //   children: List.generate(plans.length, (i) {
+                      //     final bool selected = i == _pageIndex;
+                      //     return AnimatedContainer(
+                      //       duration: const Duration(milliseconds: 220),
+                      //       margin: const EdgeInsets.symmetric(horizontal: 6),
+                      //       height: selected ? 10 : 8,
+                      //       width: selected ? 28 : 8,
+                      //       decoration: BoxDecoration(
+                      //         color: selected ? primary : Colors.grey[300],
+                      //         borderRadius: BorderRadius.circular(6),
+                      //       ),
+                      //     );
+                      //   }),
+                      // ),
                     ],
                   );
                 },

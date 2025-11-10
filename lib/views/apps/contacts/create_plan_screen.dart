@@ -50,6 +50,27 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
   bool isSpecialOffer = false;
   bool isSaving = false;
 
+
+
+  // Predefined amenities
+  final List<String> predefinedAmenities = [
+    'Gym', 'Pool', 'Wifi', 'Parking', 'Spa', 'Restaurant', 'Bar'
+  ];
+
+// Map of available icons
+  final Map<String, IconData> amenityIcons = {
+    'star': LucideIcons.star,
+    'heart': LucideIcons.heart,
+    'wifi': LucideIcons.wifi,
+    'coffee': LucideIcons.coffee,
+    'music': LucideIcons.music,
+    'car': LucideIcons.car,
+    'dumbbell': LucideIcons.dumbbell,
+    'sun': LucideIcons.sun,
+  };
+
+
+
   // Date Picker helper
   Future<void> _pickDate(TextEditingController controller) async {
     final now = DateTime.now();
@@ -97,6 +118,73 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
   // Add amenity dialog
   Future<void> _addAmenityDialog() async {
     final titleCtrl = TextEditingController();
+    String selectedIcon = 'star';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text("Add Amenity"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleCtrl,
+              decoration: const InputDecoration(labelText: "Title"),
+            ),
+            MySpacing.height(12),
+            DropdownButtonFormField<String>(
+              value: selectedIcon,
+              items: amenityIcons.keys
+                  .map((k) => DropdownMenuItem(
+                value: k,
+                child: Row(
+                  children: [
+                    Icon(amenityIcons[k], size: 18, color: Colors.black87),
+                    MySpacing.width(8),
+                    Text(k),
+                  ],
+                ),
+              ))
+                  .toList(),
+              onChanged: (v) => selectedIcon = v ?? 'star',
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              dropdownColor: Colors.white, // ✅ fixes transparency
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () {
+              if (titleCtrl.text.isNotEmpty) {
+                amenities.add({
+                  "title": titleCtrl.text,
+                  "icon": selectedIcon,
+                });
+                setState(() {});
+                Get.back();
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  /*Future<void> _addAmenityDialog() async {
+    final titleCtrl = TextEditingController();
     final iconCtrl = TextEditingController();
     await showDialog(
       context: context,
@@ -137,7 +225,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
         ],
       ),
     );
-  }
+  }*/
 
   Future<List<String>> _uploadImages(List<Uint8List> images, String folder) async {
     final urls = <String>[];
@@ -330,7 +418,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
                    MySpacing.height(24),
 
                    // Amenities
-                   MyContainer(
+                  /* MyContainer(
                      color: Colors.white,
                      borderRadiusAll: 20,
                      paddingAll: 24,
@@ -368,6 +456,136 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
                                onDeleted: () {
                                  setState(() => amenities.remove(a));
                                },
+                             ))
+                                 .toList(),
+                           ),
+                       ],
+                     ),
+                   ),*/
+                   MyContainer(
+                     color: Colors.white,
+                     borderRadiusAll: 20,
+                     paddingAll: 24,
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Row(
+                           children: [
+                             MyText.titleMedium("Amenities", fontWeight: 700),
+                             const Spacer(),
+                             MyButton(
+                               onPressed: _addAmenityDialog,
+                               backgroundColor: primary,
+                               borderRadiusAll: 10,
+                               padding: MySpacing.xy(12, 8),
+                               child: Row(children: [
+                                 const Icon(LucideIcons.plus, size: 14, color: Colors.white),
+                                 MySpacing.width(6),
+                                 MyText.bodySmall("Add", color: Colors.white),
+                               ]),
+                             ),
+                           ],
+                         ),
+                         MySpacing.height(12),
+
+                         // Dropdown to select predefined amenity
+                         Row(
+                           children: [
+                             // Amenity selection
+                             Expanded(
+                               child: DropdownButtonFormField<String>(
+                                 hint: const Text("Select Amenity"),
+                                 items: predefinedAmenities
+                                     .map((e) => DropdownMenuItem(
+                                   value: e,
+                                   child: Text(e),
+                                 ))
+                                     .toList(),
+                                 onChanged: (value) {
+                                   if (value != null) {
+                                     amenities.add({
+                                       'title': value,
+                                       'icon': 'star', // default icon
+                                     });
+                                     setState(() {});
+                                   }
+                                 },
+                                 decoration: InputDecoration(
+                                   filled: true,
+                                   fillColor: Colors.grey[100],
+                                   contentPadding:
+                                   const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                   border: OutlineInputBorder(
+                                     borderRadius: BorderRadius.circular(10),
+                                     borderSide: BorderSide.none,
+                                   ),
+                                 ),
+                                 dropdownColor: Colors.white, // <-- makes the list visible
+                               ),
+                             ),
+                             MySpacing.width(12),
+
+                             // Icon selection
+                             Expanded(
+                               child: DropdownButtonFormField<String>(
+                                 hint: const Text("Select Icon"),
+                                 items: amenityIcons.keys
+                                     .map((k) => DropdownMenuItem(
+                                   value: k,
+                                   child: Row(
+                                     children: [
+                                       Icon(amenityIcons[k], size: 18, color: primary),
+                                       MySpacing.width(8),
+                                       Text(k),
+                                     ],
+                                   ),
+                                 ))
+                                     .toList(),
+                                 onChanged: (iconKey) {
+                                   if (iconKey != null && amenities.isNotEmpty) {
+                                     amenities.last['icon'] = iconKey;
+                                     setState(() {});
+                                   }
+                                 },
+                                 decoration: InputDecoration(
+                                   filled: true,
+                                   fillColor: Colors.grey[100],
+                                   contentPadding:
+                                   const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                   border: OutlineInputBorder(
+                                     borderRadius: BorderRadius.circular(10),
+                                     borderSide: BorderSide.none,
+                                   ),
+                                 ),
+                                 dropdownColor: Colors.white, // <-- fixes transparency
+                               ),
+                             ),
+                           ],
+                         ),
+
+
+                         MySpacing.height(12),
+
+                         // Display added amenities
+                         if (amenities.isEmpty)
+                           MyText.bodySmall("No amenities added yet", color: Colors.grey[600])
+                         else
+                           Wrap(
+                             spacing: 8,
+                             runSpacing: 8,
+                             children: amenities
+                                 .map((a) => Chip(
+                               avatar: Icon(
+                                 amenityIcons[a['icon']] ?? LucideIcons.star,
+                                 size: 16,
+                                 color: primary,
+                               ),
+                               label: Text(a['title']),
+                               deleteIcon: const Icon(Icons.close, size: 16),
+                               onDeleted: () {
+                                 setState(() => amenities.remove(a));
+                               },
+                               backgroundColor: Colors.grey[100],
                              ))
                                  .toList(),
                            ),

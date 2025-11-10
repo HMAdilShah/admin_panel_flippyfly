@@ -5,6 +5,15 @@ import 'package:intl/intl.dart';
 import 'package:webkit/helpers/widgets/my_button.dart';
 import 'package:webkit/helpers/widgets/my_spacing.dart';
 import 'package:webkit/helpers/widgets/my_text.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+
+final Map<String, IconData> amenityIcons = {
+  'star': LucideIcons.star,
+  'heart': LucideIcons.heart,
+  'wifi': LucideIcons.wifi,
+  'coffee': LucideIcons.coffee,
+  'music': LucideIcons.music,
+};
 
 class PlanEditScreen extends StatefulWidget {
   final String planId;
@@ -16,8 +25,8 @@ class PlanEditScreen extends StatefulWidget {
 
 class _PlanEditScreenState extends State<PlanEditScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _coinsController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -26,13 +35,22 @@ class _PlanEditScreenState extends State<PlanEditScreen> {
   DateTime? _toDate;
   bool _isSpecialOffer = false;
   String _isFor = 'premium'; // default
+  // List<Map<String, String>> _amenities = [];
+  List<Map<String, dynamic>> _amenities = [];
 
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
+
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlan();
+  }
 
   Future<void> _loadPlan() async {
     final doc = await _db.collection('plans').doc(widget.planId).get();
     if (!doc.exists) return;
-
     final data = doc.data()!;
     setState(() {
       _titleController.text = data['title'] ?? '';
@@ -42,6 +60,14 @@ class _PlanEditScreenState extends State<PlanEditScreen> {
       _toDate = _parseDate(data['toDate']);
       _isSpecialOffer = data['isSpecialOffer'] ?? false;
       _isFor = data['isFor'] ?? 'premium';
+      _amenities = (data['amenities'] as List<dynamic>?)
+          ?.cast<Map<String, dynamic>>()
+          .map((e) => {
+        'title': e['title'] ?? '',
+        'icon': e['icon'] ?? 'star',
+      })
+          .toList() ??
+          [];
     });
   }
 
@@ -52,174 +78,335 @@ class _PlanEditScreenState extends State<PlanEditScreen> {
     if (d is String) {
       try {
         return DateTime.parse(d);
-      } catch (_) {
-        final parts = d.split('-');
-        if (parts.length == 3) {
-          final y = int.tryParse(parts[0]) ?? 0;
-          final m = int.tryParse(parts[1]) ?? 0;
-          final day = int.tryParse(parts[2]) ?? 0;
-          return DateTime(y, m, day);
-        }
-      }
+      } catch (_) {}
     }
     return null;
   }
 
-  Future<void> _savePlan() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    await _db.collection('plans').doc(widget.planId).update({
-      'title': _titleController.text.trim(),
-      'coins': int.tryParse(_coinsController.text.trim()) ?? 0,
-      'description': _descriptionController.text.trim(),
-      'fromDate': _fromDate != null ? Timestamp.fromDate(_fromDate!) : null,
-      'toDate': _toDate != null ? Timestamp.fromDate(_toDate!) : null,
-      'isSpecialOffer': _isSpecialOffer,
-      'isFor': _isFor,
-    });
-
-    Get.back(result: true); // go back and refresh
+  Future<void> _pickDate(BuildContext context, bool isFrom) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: isFrom ? (_fromDate ?? DateTime.now()) : (_toDate ?? DateTime.now()),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isFrom) {
+          _fromDate = picked;
+        } else {
+          _toDate = picked;
+        }
+      });
+    }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPlan();
+  Future<void> _addAmenityDialog() async {
+    final titleCtrl = TextEditingController();
+    String selectedIcon = 'star';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Add Amenity"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleCtrl,
+              decoration: InputDecoration(
+                labelText: "Title",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+            MySpacing.height(12),
+            DropdownButtonFormField<String>(
+              value: selectedIcon,
+              items: amenityIcons.entries
+                  .map(
+                    (e) => DropdownMenuItem(
+                  value: e.key,
+                  child: Row(
+                    children: [
+                      Icon(e.value, size: 18),
+                      MySpacing.width(8),
+                      Text(e.key),
+                    ],
+                  ),
+                ),
+              )
+                  .toList(),
+              onChanged: (v) => selectedIcon = v ?? 'star',
+              dropdownColor: Colors.white,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () {
+              if (titleCtrl.text.isNotEmpty) {
+                setState(() => _amenities.add({
+                  "title": titleCtrl.text,
+                  "icon": selectedIcon,
+                }));
+                Get.back();
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _savePlan() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
+
+    try {
+      await _db.collection('plans').doc(widget.planId).update({
+        'title': _titleController.text.trim(),
+        'coins': int.tryParse(_coinsController.text.trim()) ?? 0,
+        'description': _descriptionController.text.trim(),
+        'fromDate': _fromDate != null ? Timestamp.fromDate(_fromDate!) : null,
+        'toDate': _toDate != null ? Timestamp.fromDate(_toDate!) : null,
+        'isSpecialOffer': _isSpecialOffer,
+        'isFor': _isFor,
+        'amenities': _amenities,
+      });
+
+      Get.snackbar("Success", "Plan updated successfully", backgroundColor: Colors.green.withOpacity(0.1), colorText: Colors.green);
+      Get.back(result: true);
+    } catch (e) {
+      Get.snackbar("Error", e.toString(), backgroundColor: Colors.red.withOpacity(0.1), colorText: Colors.red);
+    } finally {
+      setState(() => _isSaving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Plan')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              MyText.titleMedium("Title"),
-              MySpacing.height(6),
-              TextFormField(
-                controller: _titleController,
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-              ),
-              MySpacing.height(16),
-
-              Row(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MyText.titleMedium("From Date"),
-                        MySpacing.height(6),
-                        InkWell(
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _fromDate ?? DateTime.now(),
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
-                            );
-                            if (date != null) setState(() => _fromDate = date);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(_fromDate != null ? _dateFormat.format(_fromDate!) : 'Select date'),
-                          ),
-                        ),
-                      ],
+                  MyText.titleLarge("Edit Plan", fontWeight: 700),
+                  MySpacing.height(16),
+
+                  // Title
+                  TextFormField(
+                    controller: _titleController,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    decoration: InputDecoration(
+                      labelText: "Title",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  MySpacing.width(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MyText.titleMedium("To Date"),
-                        MySpacing.height(6),
-                        InkWell(
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: _toDate ?? DateTime.now(),
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
-                            );
-                            if (date != null) setState(() => _toDate = date);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(6),
+                  MySpacing.height(16),
+
+                  // Dates
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("From Date"),
+                            MySpacing.height(6),
+                            InkWell(
+                              onTap: () => _pickDate(context, true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  border: Border.all(color: Colors.grey.shade400),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _fromDate != null ? _dateFormat.format(_fromDate!) : 'Select date',
+                                      style: TextStyle(color: Colors.grey[800]),
+                                    ),
+                                    const Icon(Icons.calendar_today, size: 18),
+                                  ],
+                                ),
+                              ),
                             ),
-                            child: Text(_toDate != null ? _dateFormat.format(_toDate!) : 'Select date'),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              MySpacing.height(16),
-
-              MyText.titleMedium("Coins"),
-              MySpacing.height(6),
-              TextFormField(
-                controller: _coinsController,
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-              ),
-              MySpacing.height(16),
-
-              MyText.titleMedium("Description"),
-              MySpacing.height(6),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-              ),
-              MySpacing.height(16),
-
-              Row(
-                children: [
-                  MyText.bodyMedium("Type: "),
-                  MySpacing.width(12),
-                  DropdownButton<String>(
-                    value: _isFor,
-                    items: const [
-                      DropdownMenuItem(value: 'premium', child: Text('Premium')),
-                      DropdownMenuItem(value: 'free', child: Text('Free')),
+                      ),
+                      MySpacing.width(12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("To Date"),
+                            MySpacing.height(6),
+                            InkWell(
+                              onTap: () => _pickDate(context, false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  border: Border.all(color: Colors.grey.shade400),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _toDate != null ? _dateFormat.format(_toDate!) : 'Select date',
+                                      style: TextStyle(color: Colors.grey[800]),
+                                    ),
+                                    const Icon(Icons.calendar_today, size: 18),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
-                    onChanged: (val) => setState(() => _isFor = val!),
                   ),
-                  MySpacing.width(24),
-                  MyText.bodyMedium("Special Offer: "),
-                  Checkbox(
-                    value: _isSpecialOffer,
-                    onChanged: (val) => setState(() => _isSpecialOffer = val ?? false),
+                  MySpacing.height(16),
+
+                  // Coins
+                  TextFormField(
+                    controller: _coinsController,
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    decoration: InputDecoration(
+                      labelText: "Coins",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
+                  MySpacing.height(16),
+
+                  // Description
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: "Description",
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  MySpacing.height(16),
+
+                  // Membership type + Special Offer
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _isFor,
+                          items: const [
+                            DropdownMenuItem(value: 'premium', child: Text('Premium')),
+                            DropdownMenuItem(value: 'free', child: Text('Free')),
+                          ],
+                          onChanged: (v) => setState(() => _isFor = v!),
+                          dropdownColor: Colors.white,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      MySpacing.width(24),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _isSpecialOffer,
+                            onChanged: (v) => setState(() => _isSpecialOffer = v ?? false),
+                          ),
+                          const Text("Special Offer"),
+                        ],
+                      ),
+                    ],
+                  ),
+                  MySpacing.height(16),
+
+                  // Amenities
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      MyText.titleMedium("Amenities"),
+                      ElevatedButton.icon(
+                        onPressed: _addAmenityDialog,
+                        icon: const Icon(LucideIcons.plus, size: 16),
+                        label: const Text("Add"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  MySpacing.height(8),
+                  if (_amenities.isEmpty)
+                    Text("No amenities added", style: TextStyle(color: Colors.grey[600]))
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _amenities.map((a) {
+                        final iconData = amenityIcons[a['icon']] ?? LucideIcons.star;
+                        return Chip(
+                          label: Text(a['title'] ?? ''),
+                          avatar: Icon(iconData, size: 16, color: Colors.amber),
+                          onDeleted: () {
+                            setState(() => _amenities.remove(a));
+                          },
+                        );
+                      }).toList(),
+                    ),
+
+                  MySpacing.height(32),
+                  MyButton(
+                    onPressed: _isSaving ? null : _savePlan,
+                    backgroundColor: Colors.green,
+                    borderRadiusAll: 12,
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                    child: _isSaving
+                        ? const SizedBox(
+                        width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : MyText.bodyMedium("Save Changes", color: Colors.white),
+                  ),
+                  MySpacing.height(40),
                 ],
               ),
-
-              MySpacing.height(24),
-              MyButton(
-                onPressed: _savePlan,
-                backgroundColor: Colors.green,
-                borderRadiusAll: 12,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                child: MyText.bodyMedium("Save Changes", color: Colors.white),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
