@@ -1,19 +1,13 @@
-/*
+// views/apps/contacts/member_list.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:webkit/controller/apps/contact/member_list_controller.dart';
-import 'package:webkit/helpers/theme/app_style.dart';
-import 'package:webkit/helpers/utils/ui_mixins.dart';
-import 'package:webkit/helpers/widgets/my_breadcrumb.dart';
-import 'package:webkit/helpers/widgets/my_breadcrumb_item.dart';
-import 'package:webkit/helpers/widgets/my_button.dart';
-import 'package:webkit/helpers/widgets/my_container.dart';
 import 'package:webkit/helpers/widgets/my_spacing.dart';
 import 'package:webkit/helpers/widgets/my_text.dart';
-import 'package:webkit/helpers/widgets/responsive.dart';
 import 'package:webkit/models/app_user.dart';
 import 'package:webkit/views/layouts/layout.dart';
+import 'package:webkit/helpers/widgets/my_button.dart';
 
 class MemberList extends StatefulWidget {
   const MemberList({super.key});
@@ -22,738 +16,468 @@ class MemberList extends StatefulWidget {
   State<MemberList> createState() => _MemberListState();
 }
 
-class _MemberListState extends State<MemberList>
-    with SingleTickerProviderStateMixin, UIMixin {
-  late MemberListController controller;
+class _MemberListState extends State<MemberList> {
+  final Color primary = const Color(0xFF835FFF);
+  final Color background = const Color(0xFFEFF1FE);
+  final Color accentPink = const Color(0xFFF71E64);
+  final Color darkText = const Color(0xFF222222);
 
-  @override
-  void initState() {
-    super.initState();
-    controller = Get.put(MemberListController());
+  final MemberListController controller = Get.put(MemberListController());
+
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+
+  List<AppUserModel> _filter(List<AppUserModel> list) {
+    if (_searchQuery.trim().isEmpty) return list;
+    final q = _searchQuery.toLowerCase();
+    return list.where((u) {
+      return (u.name.toLowerCase().contains(q) || (u.phone.toLowerCase().contains(q)));
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Layout(
-      child: GetBuilder(
-        init: controller,
-        builder: (controller) {
-          return Column(
-            children: [
-              Padding(
-                padding: MySpacing.x(flexSpacing),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    MyText.titleMedium(
-                      "Users List",
-                      fontWeight: 600,
-                    ),
-                    MyBreadcrumb(
-                      children: [
-                        MyBreadcrumbItem(name: "Users"),
-                        MyBreadcrumbItem(name: "Users List", active: true),
-                      ],
-                    ),
-                  ],
-                ),
+      child: Container(
+        color: background,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: MyText.titleLarge("User Management", fontWeight: 700, color: darkText),
+                  ),
+                  MyButton(
+                    onPressed: () => controller.goToDashboard(),
+                    backgroundColor: primary,
+                    borderRadiusAll: 10,
+                    padding: MySpacing.xy(18, 12),
+                    child: Row(children: [
+                      const Icon(Icons.dashboard, color: Colors.white, size: 16),
+                      MySpacing.width(8),
+                      MyText.bodySmall("Dashboard", color: Colors.white),
+                    ]),
+                  ),
+                ],
               ),
-              MySpacing.height(flexSpacing),
-              Padding(
-                padding: MySpacing.x(flexSpacing),
-                child: Column(
-                  children: [
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.end,
-                    //   children: [
-                    //     // MyButton(
-                    //     //   onPressed: () => showDialog(
-                    //     //     context: context,
-                    //     //     builder: (context) => AlertDialog(
-                    //     //       clipBehavior: Clip.antiAliasWithSaveLayer,
-                    //     //       title: Column(
-                    //     //         crossAxisAlignment: CrossAxisAlignment.start,
-                    //     //         children: [
-                    //     //           MyText.titleMedium(
-                    //     //             "Add item",
-                    //     //           ),
-                    //     //         ],
-                    //     //       ),
-                    //     //       titlePadding: MySpacing.xy(16, 12),
-                    //     //       insetPadding: MySpacing.y(300),
-                    //     //       actionsPadding: MySpacing.xy(190, 16),
-                    //     //       contentPadding: MySpacing.x(16),
-                    //     //       content: Column(
-                    //     //         crossAxisAlignment: CrossAxisAlignment.start,
-                    //     //         children: [
-                    //     //           MyText.bodyMedium("Name :"),
-                    //     //           MySpacing.height(8),
-                    //     //           TextFormField(
-                    //     //             validator: controller.basicValidator
-                    //     //                 .getValidation('name'),
-                    //     //             controller: controller.basicValidator
-                    //     //                 .getController('name'),
-                    //     //             keyboardType: TextInputType.emailAddress,
-                    //     //             decoration: InputDecoration(
-                    //     //               labelText: "Name",
-                    //     //               labelStyle:
-                    //     //                   MyTextStyle.bodySmall(xMuted: true),
-                    //     //               border: outlineInputBorder,
-                    //     //               contentPadding: MySpacing.all(16),
-                    //     //               isCollapsed: true,
-                    //     //               floatingLabelBehavior:
-                    //     //                   FloatingLabelBehavior.never,
-                    //     //             ),
-                    //     //           ),
-                    //     //           MySpacing.height(16),
-                    //     //           MyText.bodyMedium("Address :"),
-                    //     //           MySpacing.height(8),
-                    //     //           TextFormField(
-                    //     //             validator: controller.basicValidator
-                    //     //                 .getValidation('address'),
-                    //     //             controller: controller.basicValidator
-                    //     //                 .getController('address'),
-                    //     //             keyboardType: TextInputType.emailAddress,
-                    //     //             decoration: InputDecoration(
-                    //     //               labelText: "Address",
-                    //     //               labelStyle:
-                    //     //                   MyTextStyle.bodySmall(xMuted: true),
-                    //     //               border: outlineInputBorder,
-                    //     //               contentPadding: MySpacing.all(16),
-                    //     //               isCollapsed: true,
-                    //     //               floatingLabelBehavior:
-                    //     //                   FloatingLabelBehavior.never,
-                    //     //             ),
-                    //     //           ),
-                    //     //         ],
-                    //     //       ),
-                    //     //       actions: [
-                    //     //         MyButton(
-                    //     //           // onPressed: controller.onSubmit,
-                    //     //           onPressed: () {
-                    //     //             Navigator.pop(context);
-                    //     //           },
-                    //     //
-                    //     //           elevation: 0,
-                    //     //           backgroundColor: contentTheme.primary,
-                    //     //           borderRadiusAll: AppStyle.buttonRadius.medium,
-                    //     //           child: MyText.bodyMedium(
-                    //     //             "Ok",
-                    //     //             color: contentTheme.onPrimary,
-                    //     //           ),
-                    //     //         ),
-                    //     //         MyButton(
-                    //     //           onPressed: () {
-                    //     //             Navigator.pop(context);
-                    //     //           },
-                    //     //           elevation: 0,
-                    //     //           backgroundColor: contentTheme.primary,
-                    //     //           borderRadiusAll: AppStyle.buttonRadius.medium,
-                    //     //           child: MyText.bodyMedium(
-                    //     //             "Cancel",
-                    //     //             color: contentTheme.onPrimary,
-                    //     //           ),
-                    //     //         ),
-                    //     //       ],
-                    //     //     ),
-                    //     //   ),
-                    //     //   elevation: 0,
-                    //     //   padding: MySpacing.xy(12, 16),
-                    //     //   backgroundColor: contentTheme.primary,
-                    //     //   borderRadiusAll: AppStyle.buttonRadius.medium,
-                    //     //   child: Row(
-                    //     //     children: [
-                    //     //       Icon(
-                    //     //         LucideIcons.circle_plus,
-                    //     //         color: contentTheme.light,
-                    //     //         size: 16,
-                    //     //       ),
-                    //     //       MySpacing.width(16),
-                    //     //       MyText.bodySmall(
-                    //     //         "Add New",
-                    //     //         color: contentTheme.onPrimary,
-                    //     //       ),
-                    //     //     ],
-                    //     //   ),
-                    //     // ),
-                    //     SizedBox(
-                    //       width: 200,
-                    //       child: TextFormField(
-                    //         maxLines: 1,
-                    //         style: MyTextStyle.bodyMedium(),
-                    //         decoration: InputDecoration(
-                    //             hintText: "search",
-                    //             hintStyle: MyTextStyle.bodySmall(xMuted: true),
-                    //             border: outlineInputBorder,
-                    //             enabledBorder: outlineInputBorder,
-                    //             focusedBorder: focusedInputBorder,
-                    //             prefixIcon: const Align(
-                    //                 alignment: Alignment.center,
-                    //                 child: Icon(
-                    //                   LucideIcons.search,
-                    //                   size: 14,
-                    //                 )),
-                    //             prefixIconConstraints: const BoxConstraints(
-                    //                 minWidth: 36,
-                    //                 maxWidth: 36,
-                    //                 minHeight: 32,
-                    //                 maxHeight: 32),
-                    //             contentPadding: MySpacing.xy(16, 12),
-                    //             isCollapsed: true,
-                    //             floatingLabelBehavior:
-                    //                 FloatingLabelBehavior.never),
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
-                    // MySpacing.height(flexSpacing),
-                    FutureBuilder<List<AppUserModel>>(
-                      future: controller.fetchUsers(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(
-                              child: Text("Error: ${snapshot.error}"));
-                        } else if (!snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return const Center(child: Text("No users found."));
-                        } else {
-                          final users = snapshot.data!;
+            ),
+            MySpacing.height(18),
 
-                          return Padding(
-                            padding: MySpacing.x(flexSpacing),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                MySpacing.height(16),
-                                PaginatedDataTable(
-                                  arrowHeadColor: contentTheme.primary,
-                                  header: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      MyText.titleLarge("Users List"),
-                                      MyButton(
-                                        onPressed: controller.goToDashboard,
-                                        elevation: 0,
-                                        padding: MySpacing.xy(20, 16),
-                                        backgroundColor: contentTheme.primary,
-                                        borderRadiusAll:
-                                            AppStyle.buttonRadius.medium,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              LucideIcons.monitor,
-                                              size: 18,
-                                              color: contentTheme.light,
-                                            ),
-                                            MySpacing.width(8),
-                                            MyText.labelMedium(
-                                              'dashboard'.tr,
-                                              color: contentTheme.onPrimary,
-                                            ),
-                                          ],
-                                        ),
+            // Search / actions row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: TextField(
+                        controller: _searchCtrl,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        decoration: InputDecoration(
+                          hintText: 'Search by name or phone',
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  MySpacing.width(12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // quick sample: create dummy user (for testing)
+                      FirebaseFirestore.instance.collection('users').add({
+                        'name': 'Demo User ${DateTime.now().millisecondsSinceEpoch % 1000}',
+                        'email': 'demo${DateTime.now().millisecondsSinceEpoch % 1000}@example.com',
+                        'phone': '+92 300 000 0000',
+                        'avatar_url': '',
+                        'country': 'PK',
+                        'user_status': 'active',
+                        'plan_name': '',
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
+                    },
+                    icon: const Icon(Icons.person_add),
+                    label: const Text("Add User"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  )
+                ],
+              ),
+            ),
+
+            MySpacing.height(18),
+
+            // Users list
+            Expanded(
+              child: Obx(() {
+                if (controller.loading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final filtered = _filter(controller.users);
+                if (filtered.isEmpty) {
+                  return Center(child: MyText.bodyMedium("No users match your search."));
+                }
+
+                // Fancy list (cards). Serial no. shown.
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, idx) {
+                    final user = filtered[idx];
+                    final serial = idx + 1;
+                    return GestureDetector(
+                      onTap: () => Get.to(() => ProfileViewPage(userId: user.id)),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
+                          border: Border.all(color: const Color(0xFFF0EEFF)),
+                        ),
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            // serial
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(child: MyText.bodyMedium("#$serial", color: primary, fontWeight: 700)),
+                            ),
+                            MySpacing.width(12),
+
+                            // avatar + main info
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.grey[200],
+                              backgroundImage: user.avatarUrl.isNotEmpty ? NetworkImage(user.avatarUrl) : null,
+                              child: user.avatarUrl.isEmpty ? const Icon(Icons.person, color: Colors.white) : null,
+                            ),
+                            MySpacing.width(12),
+
+                            // name / email / phone / country
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Expanded(child: MyText.bodyMedium(user.name, fontWeight: 700, color: darkText)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: user.userStatus.toLowerCase() == 'blocked' ? Colors.red.withOpacity(0.08) : Colors.green.withOpacity(0.06),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ],
-                                  ),
-                                  columns: [
-                                    DataColumn(
-                                        label: MyText.bodyMedium('Avatar',
-                                            fontWeight: 600)),
-                                    DataColumn(
-                                        label: MyText.bodyMedium('Name',
-                                            fontWeight: 600)),
-                                    DataColumn(
-                                        label: MyText.bodyMedium('Email',
-                                            fontWeight: 600)),
-                                    DataColumn(
-                                        label: MyText.bodyMedium('Country',
-                                            fontWeight: 600)),
-                                    DataColumn(
-                                        label: MyText.bodyMedium('Action',
-                                            fontWeight: 600)),
-                                  ],
-                                  columnSpacing: 80,
-                                  horizontalMargin: 28,
-                                  rowsPerPage: 10,
-                                  source: _UserDataSource(users, controller,context),
+                                      child: MyText.bodySmall(user.userStatus.isEmpty ? 'active' : user.userStatus, color: user.userStatus.toLowerCase() == 'blocked' ? Colors.red : Colors.green[800]),
+                                    )
+                                  ]),
+                                  MySpacing.height(6),
+                                  Row(children: [
+                                    Expanded(child: Text(user.email, style: const TextStyle(color: Colors.black54))),
+                                    MySpacing.width(8),
+                                    Text(user.phone, style: const TextStyle(color: Colors.black54)),
+                                  ]),
+                                ],
+                              ),
+                            ),
+
+                            // actions: view / block
+                            Column(
+                              children: [
+                                MyButton(
+                                  onPressed: () => Get.to(() => ProfileViewPage(userId: user.id)),
+                                  backgroundColor: primary.withOpacity(0.12),
+                                  borderRadiusAll: 10,
+                                  padding: MySpacing.xy(12, 8),
+                                  child: MyText.bodySmall("View", color: primary, fontWeight: 700),
+                                ),
+                                MySpacing.height(8),
+                                MyButton(
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (c) => AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        title: MyText.titleMedium("Confirm", fontWeight: 700),
+                                        content: MyText.bodyMedium("Block ${user.name}?"),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text("Cancel")),
+                                          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text("Block")),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) controller.blockUser(user);
+                                  },
+                                  backgroundColor: accentPink.withOpacity(0.08),
+                                  borderRadiusAll: 10,
+                                  padding: MySpacing.xy(12, 8),
+                                  child: MyText.bodySmall("Block", color: accentPink),
                                 ),
                               ],
-                            ),
-                          );
-                        }
-                      },
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile view that fetches user details and their purchases
+class ProfileViewPage extends StatefulWidget {
+  final String userId;
+  const ProfileViewPage({super.key, required this.userId});
+
+  @override
+  State<ProfileViewPage> createState() => _ProfileViewPageState();
+}
+
+class _ProfileViewPageState extends State<ProfileViewPage> {
+  final Color primary = const Color(0xFF835FFF);
+  final Color background = const Color(0xFFEFF1FE);
+  final Color darkText = const Color(0xFF222222);
+
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  Map<String, dynamic>? userData;
+  List<UserPlan> purchases = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserAndPurchases();
+  }
+
+  Future<void> _loadUserAndPurchases() async {
+    setState(() => loading = true);
+    final doc = await _db.collection('users').doc(widget.userId).get();
+    if (!doc.exists) {
+      setState(() {
+        userData = null;
+        purchases = [];
+        loading = false;
+      });
+      return;
+    }
+    userData = (doc.data() ?? {}) as Map<String, dynamic>;
+
+    // Try to read subcollection `purchases` or `plans`
+    final sub = await _db.collection('users').doc(widget.userId).collection('purchases').orderBy('purchase_date', descending: true).get();
+    purchases = sub.docs.map((d) => UserPlan.fromMap(d.id, (d.data() as Map<String, dynamic>))).toList();
+
+    // If subcollection empty, also check `userData['purchases']` (embedded list)
+    if (purchases.isEmpty && userData!['purchases'] is List) {
+      final list = (userData!['purchases'] as List).cast<Map<String, dynamic>>();
+      purchases = List.generate(list.length, (i) => UserPlan.fromMap('p_${i}', list[i]));
+    }
+
+    setState(() => loading = false);
+  }
+
+  Color _paymentColor(String s) {
+    s = s.toLowerCase();
+    if (s == 'paid' || s == 'paid_success' || s == 'completed') return Colors.green;
+    if (s == 'pending' || s == 'partial') return Colors.orange;
+    return Colors.red;
+  }
+
+  Future<void> _updatePurchaseStatus(String purchaseId, String status) async {
+    // update subcollection doc
+    await _db.collection('users').doc(widget.userId).collection('purchases').doc(purchaseId).update({'payment_status': status});
+    // reload
+    await _loadUserAndPurchases();
+    Get.snackbar('Updated', 'Payment status updated', backgroundColor: primary.withOpacity(0.08), colorText: primary);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: background,
+      appBar: AppBar(
+        title: Text("${userData?['name'] ?? 'User'}'s Profile"),
+        backgroundColor: primary,
+        elevation: 0,
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top card with avatar & basic info
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)]),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 44,
+                      backgroundImage: (userData?['avatar_url'] ?? '').isNotEmpty ? NetworkImage(userData?['avatar_url']) as ImageProvider : null,
+                      backgroundColor: Colors.grey[200],
+                      child: (userData?['avatar_url'] ?? '').isEmpty ? const Icon(Icons.person, size: 36, color: Colors.white) : null,
+                    ),
+                    MySpacing.width(16),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        MyText.titleLarge(userData?['name'] ?? '-', fontWeight: 700, color: darkText),
+                        MySpacing.height(6),
+                        MyText.bodyMedium(userData?['email'] ?? '-', color: Colors.black54),
+                        MySpacing.height(6),
+                        MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}", color: Colors.black54),
+                        MySpacing.height(8),
+                        Row(children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(color: primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                            child: MyText.bodySmall(userData?['user_status'] ?? 'active', color: primary, fontWeight: 700),
+                          ),
+                          MySpacing.width(12),
+                          MyButton(
+                            onPressed: () => Navigator.pop(context),
+                            backgroundColor: primary,
+                            borderRadiusAll: 10,
+                            padding: MySpacing.xy(12, 8),
+                            child: MyText.bodySmall("Back", color: Colors.white),
+                          )
+                        ]),
+                      ]),
                     )
                   ],
                 ),
               ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
 
-class _UserDataSource extends DataTableSource {
-  final List<AppUserModel> users;
-  final dynamic controller;
-  final BuildContext context;
+              MySpacing.height(20),
 
-  _UserDataSource(this.users, this.controller, this.context);
+              // Plans summary
+              MyText.titleMedium("Purchased Plans", fontWeight: 700, color: darkText),
+              MySpacing.height(12),
 
-  @override
-  DataRow getRow(int index) {
-    final user = users[index];
-    return DataRow(
-      cells: [
-        DataCell(
-          MyContainer.rounded(
-            height: 50,
-            width: 50,
-            clipBehavior: Clip.antiAliasWithSaveLayer,
-            child: Image.network(
-              user.avatarUrl,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        DataCell(MyText.bodyMedium(user.name, fontSize: 16)),
-        DataCell(MyText.bodyMedium(user.email, fontSize: 16, muted: true)),
-        DataCell(MyText.bodyMedium(user.country, fontSize: 16, muted: true)),
-
-        /// Action column with two buttons
-        DataCell(
-          Row(
-            children: [
-              MyButton(
-                onPressed: () {
-                  //controller.selectedUser.value = user;
-                },
-                elevation: 0,
-                padding: MySpacing.xy(12, 8),
-               // backgroundColor: contentTheme.primary,
-                child: MyText.bodySmall(
-                  "View Profile",
-              //    color: contentTheme.primary,
-                  fontWeight: 600,
-                ),
-              ),
-              MySpacing.width(8),
-              MyButton(
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text("Confirm Block"),
-                      content: Text(
-                        "Are you sure you want to block ${user.name}?",
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text("Block"),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true) {
-                    controller.blockUser(user);
-                  }
-                },
-                elevation: 0,
-                padding: MySpacing.xy(12, 8),
-                backgroundColor: Colors.red.withOpacity(0.15),
-                child: MyText.bodySmall(
-                  "Block",
-                  color: Colors.red,
-                  fontWeight: 600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  bool get isRowCountApproximate => false;
-  @override
-  int get rowCount => users.length;
-  @override
-  int get selectedRowCount => 0;
-}
-*/
-
-
-
-
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:webkit/controller/apps/contact/member_list_controller.dart';
-import 'package:webkit/helpers/theme/app_style.dart';
-import 'package:webkit/helpers/utils/ui_mixins.dart';
-import 'package:webkit/helpers/widgets/my_breadcrumb.dart';
-import 'package:webkit/helpers/widgets/my_breadcrumb_item.dart';
-import 'package:webkit/helpers/widgets/my_button.dart';
-import 'package:webkit/helpers/widgets/my_container.dart';
-import 'package:webkit/helpers/widgets/my_spacing.dart';
-import 'package:webkit/helpers/widgets/my_text.dart';
-import 'package:webkit/helpers/widgets/responsive.dart';
-import 'package:webkit/models/app_user.dart';
-import 'package:webkit/views/layouts/layout.dart';
-
-class MemberList extends StatefulWidget {
-  const MemberList({super.key});
-
-  @override
-  State<MemberList> createState() => _MemberListState();
-}
-
-class _MemberListState extends State<MemberList>
-    with SingleTickerProviderStateMixin, UIMixin {
-  late MemberListController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = Get.put(MemberListController());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Color primary = const Color(0xFF835FFF);
-    final Color background = const Color(0xFFEFF1FE);
-    final Color accentPink = const Color(0xFFF71E64);
-    final Color darkText = const Color(0xFF222222);
-
-    return Layout(
-      child: GetBuilder(
-        init: controller,
-        builder: (controller) {
-          return Container(
-            color: background,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Row
-                Padding(
-                  padding: MySpacing.x(flexSpacing),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      MyText.titleLarge(
-                        "User Management",
-                        fontWeight: 700,
-                        color: darkText,
-                      ),
-                      MyBreadcrumb(
+              if (purchases.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  child: MyText.bodyMedium("No purchased plans found for this user.", color: Colors.black54),
+                )
+              else
+                Column(
+                  children: purchases.map((p) {
+                    final payment = p.paymentStatus;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8)]),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          MyBreadcrumbItem(name: "Users",),
-                          MyBreadcrumbItem(name: "List", active: true),
+                          // thumbnail / icon
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(color: primary.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+                            child: Center(child: MyText.bodyMedium(p.name.substring(0, 1).toUpperCase(), color: primary, fontWeight: 800)),
+                          ),
+                          MySpacing.width(12),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                MyText.titleSmall(p.name, fontWeight: 700, color: darkText),
+                                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                                  MyText.bodySmall("PKR ${p.amount.toStringAsFixed(0)}", color: Colors.black87),
+                                  MySpacing.height(6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(color: _paymentColor(payment).withOpacity(0.14), borderRadius: BorderRadius.circular(8)),
+                                    child: MyText.bodySmall(payment.toUpperCase(), color: _paymentColor(payment), fontWeight: 700),
+                                  )
+                                ])
+                              ]),
+                              MySpacing.height(8),
+                              MyText.bodySmall("Purchased: ${p.purchaseDate != null ? p.purchaseDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
+                              MySpacing.height(4),
+                              MyText.bodySmall("Expires: ${p.expiryDate != null ? p.expiryDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
+                              MySpacing.height(8),
+                              Row(children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    // quick toggle for demo: paid <-> due
+                                    final newStatus = (payment.toLowerCase() == 'paid') ? 'due' : 'paid';
+                                    await _updatePurchaseStatus(p.id, newStatus);
+                                  },
+                                  style: ElevatedButton.styleFrom(backgroundColor: primary),
+                                  child: MyText.bodySmall("Toggle Paid", color: Colors.white),
+                                ),
+                                MySpacing.width(8),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    // navigate to plan detail if needed
+                                  },
+                                  child: const Text("View Plan"),
+                                ),
+                              ])
+                            ]),
+                          )
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  }).toList(),
                 ),
-                MySpacing.height(flexSpacing),
 
-                // Users Table
-                Padding(
-                  padding: MySpacing.x(flexSpacing),
-                  child: FutureBuilder<List<AppUserModel>>(
-                    future: controller.fetchUsers(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      } else if (snapshot.hasError) {
-                        return Center(
-                          child: MyText.bodyMedium(
-                            "Error loading users: ${snapshot.error}",
-                            color: accentPink,
-                          ),
-                        );
-                      } else if (!snapshot.hasData ||
-                          snapshot.data!.isEmpty) {
-                        return  Center(
-                          child: MyText.bodyMedium("No users found."),
-                        );
-                      } else {
-                        final users = snapshot.data!;
-                        return MyContainer(
-                          paddingAll: 20,
-                          borderRadiusAll: 20,
-                          color: Colors.white,
-                          // shadow: AppStyle.boxShadow.md,
-                          child: PaginatedDataTable(
-                            header: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                MyText.titleMedium(
-                                  "All Registered Users",
-                                  color: darkText,
-                                  fontWeight: 600,
-                                ),
-                                MyButton(
-                                  onPressed: controller.goToDashboard,
-                                  elevation: 0,
-                                  padding: MySpacing.xy(20, 14),
-                                  backgroundColor: primary,
-                                  borderRadiusAll:
-                                  AppStyle.buttonRadius.medium,
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        LucideIcons.monitor,
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
-                                      MySpacing.width(8),
-                                      MyText.labelMedium(
-                                        "Dashboard",
-                                        color: Colors.white,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            arrowHeadColor: primary,
-                            columnSpacing: 80,
-                            horizontalMargin: 28,
-                            rowsPerPage: 10,
-                            columns: [
-                              DataColumn(
-                                label: MyText.bodyMedium('Image',
-                                    fontWeight: 600, color: darkText),
-                              ),
-                              DataColumn(
-                                label: MyText.bodyMedium('Name',
-                                    fontWeight: 600, color: darkText),
-                              ),
-                              DataColumn(
-                                label: MyText.bodyMedium('Email',
-                                    fontWeight: 600, color: darkText),
-                              ),
-                              DataColumn(
-                                label: MyText.bodyMedium('Country',
-                                    fontWeight: 600, color: darkText),
-                              ),
-                              DataColumn(
-                                label: MyText.bodyMedium('Action',
-                                    fontWeight: 600, color: darkText),
-                              ),
-                            ],
-                            source: _UserDataSource(users, controller, context,
-                                primary, accentPink, darkText),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
+              MySpacing.height(28),
 
-class _UserDataSource extends DataTableSource {
-  final List<AppUserModel> users;
-  final dynamic controller;
-  final BuildContext context;
-  final Color primary;
-  final Color accentPink;
-  final Color darkText;
-
-  _UserDataSource(
-      this.users,
-      this.controller,
-      this.context,
-      this.primary,
-      this.accentPink,
-      this.darkText,
-      );
-
-  @override
-  DataRow getRow(int index) {
-    final user = users[index];
-    return DataRow(
-      cells: [
-        DataCell(
-          Container(
-            padding: const EdgeInsets.all(5.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                user.avatarUrl,
-                height: 50,
-                width: 50,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-        ),
-        DataCell(MyText.bodyMedium(user.name,
-            fontSize: 16, color: darkText, fontWeight: 500)),
-        DataCell(MyText.bodyMedium(user.email,
-            fontSize: 15, color: Colors.black54)),
-        DataCell(MyText.bodyMedium(user.country,
-            fontSize: 15, color: Colors.black54)),
-        DataCell(
-          Row(
-            children: [
-              MyButton(
-                onPressed: () {
-                  Get.to(() => _ProfileViewPage(user: user));
-                },
-                elevation: 0,
-                padding: MySpacing.xy(12, 8),
-                backgroundColor: primary.withOpacity(0.1),
-                borderRadiusAll: 10,
-                child: MyText.bodySmall(
-                  "View Profile",
-                  color: primary,
-                  fontWeight: 600,
-                ),
-              ),
-              MySpacing.width(8),
-              MyButton(
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: MyText.titleMedium(
-                        "Confirm Block",
-                        color: accentPink,
-                        fontWeight: 700,
-                      ),
-                      content: MyText.bodyMedium(
-                        "Are you sure you want to block ${user.name}?",
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: Text("Block",
-                              style: TextStyle(color: accentPink)),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true) {
-                    controller.blockUser(user);
-                  }
-                },
-                elevation: 0,
-                padding: MySpacing.xy(12, 8),
-                backgroundColor: accentPink.withOpacity(0.12),
-                borderRadiusAll: 10,
-                child: MyText.bodySmall(
-                  "Block",
-                  color: accentPink,
-                  fontWeight: 600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  bool get isRowCountApproximate => false;
-  @override
-  int get rowCount => users.length;
-  @override
-  int get selectedRowCount => 0;
-}
-
-/// Profile View Page
-class _ProfileViewPage extends StatelessWidget {
-  final AppUserModel user;
-
-  const _ProfileViewPage({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    final Color primary = const Color(0xFF835FFF);
-    final Color background = const Color(0xFFEFF1FE);
-    final Color darkText = const Color(0xFF222222);
-
-    return Scaffold(
-      backgroundColor: background,
-      appBar: AppBar(
-        title: Text("${user.name}'s Profile"),
-        backgroundColor: primary,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: MyContainer(
-            paddingAll: 24,
-            borderRadiusAll: 20,
-            color: Colors.white,
-            // shadow: AppStyle.boxShadow.lg,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(60),
-                  child: Image.network(
-                    user.avatarUrl,
-                    height: 100,
-                    width: 100,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                MySpacing.height(16),
-                MyText.titleLarge(user.name,
-                    color: darkText, fontWeight: 700),
-                MyText.bodyMedium(user.email,
-                    color: Colors.black54, fontWeight: 500),
-                MySpacing.height(12),
-                MyText.bodyMedium("Country: ${user.country}",
-                    color: darkText),
-                MySpacing.height(24),
+              // Optionally, admin actions — send notification / add credit etc.
+              MyText.titleMedium("Admin Actions", fontWeight: 700, color: darkText),
+              MySpacing.height(12),
+              Row(children: [
                 MyButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () {
+                    // example: add credit or manual plan
+                  },
                   backgroundColor: primary,
-                  borderRadiusAll: 12,
-                  padding: MySpacing.xy(32, 14),
-                  child: MyText.bodyMedium(
-                    "Back to List",
-                    color: Colors.white,
-                    fontWeight: 600,
-                  ),
+                  borderRadiusAll: 10,
+                  padding: MySpacing.xy(12, 10),
+                  child: MyText.bodySmall("Grant Plan", color: Colors.white),
+                ),
+                MySpacing.width(12),
+                MyButton(
+                  onPressed: () {
+                    // example: mark user as VIP
+                  },
+                  backgroundColor: Colors.white,
+                  borderRadiusAll: 10,
+                  padding: MySpacing.xy(12, 10),
+                  child: MyText.bodySmall("Other Action", color: primary),
                 )
-              ],
-            ),
+              ])
+            ],
           ),
         ),
       ),

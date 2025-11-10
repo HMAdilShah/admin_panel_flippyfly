@@ -1,51 +1,59 @@
+// controller/member_list_controller.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:webkit/controller/my_controller.dart';
-import 'package:webkit/helpers/widgets/my_form_validator.dart';
 import 'package:webkit/models/app_user.dart';
-import 'package:webkit/models/discover.dart';
-import 'package:webkit/models/opportunities.dart';
 import 'package:webkit/models/post.dart';
 
-class MemberListController extends MyController {
-  List<Discover> discover = [];
-  List<Opportunities> opportunities = [];
+class MemberListController extends GetxController {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  MyFormValidator basicValidator = MyFormValidator();
-  bool loading = false;
+  // cached list
+  final RxList<AppUserModel> users = <AppUserModel>[].obs;
+  final RxBool loading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
+    fetchUsersAndListen();
+  }
 
-    Discover.dummyList.then((value) {
-      discover = value.sublist(0, 7);
-      update();
-    });
-    Opportunities.dummyList.then((value) {
-      opportunities = value.sublist(0, 7);
-      update();
+  // Fetch users once and listen for realtime changes (keeps list fresh).
+  void fetchUsersAndListen() {
+    loading.value = true;
+    _db.collection('users').snapshots().listen((snapshot) {
+      final loaded = snapshot.docs.map((d) => AppUserModel.fromDoc(d)).toList();
+      users.assignAll(loaded);
+      loading.value = false;
+    }, onError: (e) {
+      loading.value = false;
+      debugPrint("Error loading users: $e");
     });
   }
 
-  Future<List<AppUserModel>> fetchUsers() async {
+  Future<List<AppUserModel>> fetchUsersOnce() async {
+    final snapshot = await _db.collection('users').get();
+    return snapshot.docs.map((d) => AppUserModel.fromDoc(d)).toList();
+  }
+
+  Future<void> blockUser(AppUserModel user) async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('users').get();
-      final users = snapshot.docs.map((doc) {
-        return AppUserModel.fromMap(doc.data());
-      }).toList();
-      return users.sublist(0, users.length);
+      await _db
+          .collection('users')
+          .doc(user.id)
+          .update({'user_status': 'blocked'});
+      Get.snackbar('Blocked', '${user.name} has been blocked');
     } catch (e) {
-      throw Exception('Failed to load users: $e');
+      Get.snackbar('Error', e.toString());
     }
+  }
+
+  void goToDashboard() {
+    Get.toNamed('/dashboard');
   }
 
   Future<List<Post>> fetchPosts() async {
     final snapshot = await FirebaseFirestore.instance.collection('posts').get();
     return snapshot.docs.map((doc) => Post.fromMap(doc.data())).toList();
-  }
-
-  void goToDashboard() {
-    Get.toNamed('/dashboard');
   }
 }
