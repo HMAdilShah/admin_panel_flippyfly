@@ -11,18 +11,20 @@ class SupportTicketsScreen extends StatefulWidget {
 }
 
 class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
-  final CollectionReference ticketsCollection =
-  FirebaseFirestore.instance.collection('support_tickets');
+  final ticketsCollection =
+      FirebaseFirestore.instance.collection('support_tickets');
 
   final TextEditingController _searchController = TextEditingController();
+
   String searchQuery = '';
+  String statusFilter = 'all';
+  bool sortDescending = true;
 
   void _createDummyTicket() async {
-    final ticketId = (Random().nextInt(90000) + 10000).toString(); // 5-digit ID
+    final ticketId = (Random().nextInt(90000) + 10000).toString();
     await ticketsCollection.doc(ticketId).set({
       'topic': 'Sample Issue',
-      'details':
-      'User cannot login to the app. Please assist as soon as possible.',
+      'details': 'User cannot login to the app.',
       'userEmail': 'user@example.com',
       'userName': 'John Doe',
       'userId': 'user123',
@@ -32,16 +34,26 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status) {
       case 'resolved':
-        return const Color(0xFF22C55E); // green
+        return const Color(0xFF22C55E);
       case 'in process':
-        return const Color(0xFFFACC15); // amber
+        return const Color(0xFFFACC15);
       case 'not applicable':
-        return const Color(0xFF9CA3AF); // gray
+        return const Color(0xFF9CA3AF);
       default:
-        return const Color(0xFF835FFF); // primary
+        return const Color(0xFF835FFF);
     }
+  }
+  String _formatDate(dynamic timestamp) {
+    if (timestamp == null) return '--';
+
+    if (timestamp is Timestamp) {
+      final date = timestamp.toDate();
+      return '${date.day}/${date.month}/${date.year}';
+    }
+
+    return '--';
   }
 
   @override
@@ -51,95 +63,131 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
       appBar: AppBar(
         title: const Text('Support Tickets'),
         backgroundColor: const Color(0xFF835FFF),
-        elevation: 0,
       ),
       body: Column(
         children: [
+          // SEARCH
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
+              onChanged: (v) => setState(() => searchQuery = v.trim()),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF835FFF)),
                 hintText: 'Search tickets...',
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
-              onChanged: (val) => setState(() => searchQuery = val.trim()),
             ),
           ),
+
+          // FILTER BAR
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                StatusFilterPopup(
+                  value: statusFilter,
+                  onChanged: (v) => setState(() => statusFilter = v),
+                ),
+                const SizedBox(width: 12),
+                SortButton(
+                  descending: sortDescending,
+                  onToggle: () =>
+                      setState(() => sortDescending = !sortDescending),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // LIST
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: ticketsCollection
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
+              stream: ticketsCollection.snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const Center(
-                      child:
-                      CircularProgressIndicator(color: Color(0xFF835FFF)));
+                  return const Center(child: CircularProgressIndicator());
                 }
-                final tickets = snapshot.data!.docs.where((ticket) {
-                  final data = ticket.data() as Map<String, dynamic>;
-                  final topic = data['topic'] ?? '';
-                  final email = data['userEmail'] ?? '';
-                  return topic.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                      email.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                      ticket.id.contains(searchQuery);
+
+                final tickets = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+
+                  final topic = (data['topic'] ?? '').toString().toLowerCase();
+                  final email =
+                      (data['userEmail'] ?? '').toString().toLowerCase();
+                  final status = (data['status'] ?? '').toString();
+
+                  final matchesSearch =
+                      topic.contains(searchQuery.toLowerCase()) ||
+                          email.contains(searchQuery.toLowerCase()) ||
+                          doc.id.contains(searchQuery);
+
+                  final matchesStatus =
+                      statusFilter == 'all' || status == statusFilter;
+
+                  return matchesSearch && matchesStatus;
                 }).toList();
 
+                tickets.sort((a, b) {
+                  final aData = a.data() as Map<String, dynamic>?;
+                  final bData = b.data() as Map<String, dynamic>?;
+
+                  final aTime = aData?['createdAt'] is Timestamp
+                      ? (aData!['createdAt'] as Timestamp).toDate()
+                      : DateTime.fromMillisecondsSinceEpoch(0);
+
+                  final bTime = bData?['createdAt'] is Timestamp
+                      ? (bData!['createdAt'] as Timestamp).toDate()
+                      : DateTime.fromMillisecondsSinceEpoch(0);
+
+                  return sortDescending
+                      ? bTime.compareTo(aTime)
+                      : aTime.compareTo(bTime);
+                });
+
                 if (tickets.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No tickets found.',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF222222)),
-                    ),
-                  );
+                  return const Center(child: Text('No tickets found'));
                 }
 
-                return ListView.builder(
+                /*return ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: tickets.length,
                   itemBuilder: (context, index) {
-                    final ticket = tickets[index];
-                    final data = ticket.data() as Map<String, dynamic>;
-                    final status = (data['status'] ?? 'in process').toString();
+                    final doc = tickets[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    final status = data['status'] ?? 'in process';
 
-                    return GestureDetector(
-                      onTap: () {
-                        Get.to(() =>
-                            TicketDetailScreen(ticketId: ticket.id));
-                      },
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        elevation: 3,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFEFF1FE), Colors.white],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          padding: const EdgeInsets.all(16),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 2,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => Get.to(
+                            () => TicketDetailScreen(ticketId: doc.id)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // TOP ROW: Ticket ID + Status
                               Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      data['topic'] ?? '',
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF222222)),
+                                  Text(
+                                    'Ticket #${doc.id}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
                                     ),
                                   ),
                                   Container(
@@ -147,36 +195,194 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                         horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: _getStatusColor(status)
-                                          .withOpacity(0.2),
+                                          .withOpacity(0.15),
+                                      borderRadius:
+                                          BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      status.toUpperCase(),
+                                      style: TextStyle(
+                                        color: _getStatusColor(status),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // TOPIC
+                              Text(
+                                data['topic'] ?? 'No topic',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              // DETAILS PREVIEW
+                              Text(
+                                data['details'] ?? '',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // USER + DATE
+                              Row(
+                                children: [
+                                  const Icon(Icons.person_outline,
+                                      size: 16),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${data['userName'] ?? 'Unknown'} • ${data['userEmail'] ?? ''}',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black54,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _formatDate(data['createdAt']),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black45,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );*/
+
+                return GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: tickets.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // 🔥 2 tickets per row
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 1.25, // balanced card height
+                  ),
+                  itemBuilder: (context, index) {
+                    final doc = tickets[index];
+                    final data = doc.data() as Map<String, dynamic>? ?? {};
+                    final status = data['status'] ?? 'in process';
+                    final ticketNo = data['ticketNo'];
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () =>
+                          Get.to(() => TicketDetailScreen(ticketId: doc.id)),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Ticket ID + Status
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+
+                                  Text(
+                                    ticketNo != null ? 'Ticket #$ticketNo' : 'Ticket #----',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(status).withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       status.toUpperCase(),
                                       style: TextStyle(
-                                          color: _getStatusColor(status),
-                                          fontWeight: FontWeight.bold),
+                                        color: _getStatusColor(status),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
+
                               const SizedBox(height: 8),
-                              Text('User: ${data['userName']}',
-                                  style: const TextStyle(
-                                      color: Color(0xFF222222))),
-                              Text('Email: ${data['userEmail']}',
-                                  style: const TextStyle(
-                                      color: Color(0xFF222222))),
-                              Text('Ticket ID: ${ticket.id}',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF835FFF))),
-                              const SizedBox(height: 8),
+
+                              // Topic
                               Text(
-                                data['details'] ?? '',
+                                data['topic'] ?? 'No topic',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Color(0xFF222222)),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              // Preview
+                              Expanded(
+                                child: Text(
+                                  data['details'] ?? '',
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              // User + Date
+                              Row(
+                                children: [
+                                  const Icon(Icons.person_outline, size: 14),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      data['userName'] ?? 'Unknown',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _formatDate(data['createdAt']),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.black45,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -185,6 +391,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                     );
                   },
                 );
+
               },
             ),
           ),
@@ -192,21 +399,88 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createDummyTicket,
+        backgroundColor: const Color(0xFF835FFF),
         icon: const Icon(Icons.add),
         label: const Text('New Ticket'),
-        backgroundColor: const Color(0xFF835FFF),
       ),
+    );
+  }
+}
+
+class StatusFilterPopup extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const StatusFilterPopup({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      color: Colors.white,
+      onSelected: onChanged,
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'all', child: Text('All Statuses')),
+        PopupMenuItem(value: 'resolved', child: Text('Resolved')),
+        PopupMenuItem(value: 'in process', child: Text('In Process')),
+        PopupMenuItem(value: 'not applicable', child: Text('Not Applicable')),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Text(
+              value == 'all' ? 'All Statuses' : value.toUpperCase(),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SortButton extends StatelessWidget {
+  final bool descending;
+  final VoidCallback onToggle;
+
+  const SortButton({
+    super.key,
+    required this.descending,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onToggle,
+      icon: Icon(
+        descending ? Icons.arrow_downward : Icons.arrow_upward,
+        color: const Color(0xFF835FFF),
+      ),
+      tooltip: 'Sort by date',
     );
   }
 }
 
 class TicketDetailScreen extends StatefulWidget {
   final String ticketId;
+
   const TicketDetailScreen({super.key, required this.ticketId});
 
   @override
   State<TicketDetailScreen> createState() => _TicketDetailScreenState();
 }
+
+String _statusFilter = 'all';
 
 class _TicketDetailScreenState extends State<TicketDetailScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -251,8 +525,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(
-                child:
-                CircularProgressIndicator(color: Color(0xFF835FFF)));
+                child: CircularProgressIndicator(color: Color(0xFF835FFF)));
           }
           final data = snapshot.data!.data() as Map<String, dynamic>;
           _status = data['status'] ?? _status;
@@ -279,7 +552,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, color: Color(0xFF222222))),
                 const SizedBox(height: 6),
-                Text(data['details'] ?? '', style: const TextStyle(fontSize: 16)),
+                Text(data['details'] ?? '',
+                    style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 16),
                 Text('User Information',
                     style: const TextStyle(
@@ -306,42 +580,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  decoration: InputDecoration(
-                    labelText: 'Status',
-                    labelStyle: const TextStyle(color: Color(0xFF835FFF)),
-                    filled: true,
-                    fillColor: Colors.white, // solid background for the field
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF835FFF)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF835FFF)),
-                    ),
-                  ),
-                  dropdownColor: Colors.white, // solid background for dropdown menu
-                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF835FFF)),
-                  style: const TextStyle(color: Colors.black, fontSize: 16), // menu text style
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'resolved',
-                      child: Text('Resolved'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'in process',
-                      child: Text('In Process'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'not applicable',
-                      child: Text('Not Applicable'),
-                    ),
-                  ],
-                  onChanged: (val) => setState(() => _status = val ?? 'in process'),
+                StatusFilterDropdown(
+                  value: _statusFilter,
+                  onChanged: (val) {
+                    setState(() => _statusFilter = val);
+                  },
                 ),
-
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _updateTicket,
@@ -352,12 +596,81 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           borderRadius: BorderRadius.circular(12))),
                   child: const Text('Update Ticket',
                       style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class StatusFilterDropdown extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const StatusFilterDropdown({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: onChanged,
+      color: Colors.white,
+      // ✅ REAL background color
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: 'all',
+          child: Text('All Statuses'),
+        ),
+        PopupMenuItem(
+          value: 'resolved',
+          child: Text('Resolved'),
+        ),
+        PopupMenuItem(
+          value: 'in process',
+          child: Text('In Process'),
+        ),
+        PopupMenuItem(
+          value: 'not applicable',
+          child: Text('Not Applicable'),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              value == 'all' ? 'All Statuses' : value.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_drop_down, color: Color(0xFF835FFF)),
+          ],
+        ),
       ),
     );
   }

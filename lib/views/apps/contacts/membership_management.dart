@@ -28,7 +28,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
   final _premiumDesc = TextEditingController();
   final _premiumMonthly = TextEditingController();
   final _premiumAnnual = TextEditingController();
-  final _premiumDiscount = TextEditingController();
+  final _premiumMonthlyDiscount = TextEditingController();
+  final _premiumAnnualDiscount = TextEditingController();
 
   bool _isSaving = false;
   final _db = FirebaseFirestore.instance;
@@ -64,7 +65,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
     _premiumDesc.text = data['description'] ?? 'Access to all exclusive features.';
     _premiumMonthly.text = (data['monthlyPrice'] ?? '').toString();
     _premiumAnnual.text = (data['annualPrice'] ?? '').toString();
-    _premiumDiscount.text = (data['discountPercent'] ?? '').toString();
+    _premiumMonthlyDiscount.text = (data['monthlyDiscount'] ?? '').toString();
+    _premiumAnnualDiscount.text = (data['annualDiscount'] ?? '').toString();
 
     showDialog(
       context: context,
@@ -79,6 +81,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
               children: [
                 MyText.titleMedium("Edit Premium Membership", fontWeight: 700, color: darkText),
                 MySpacing.height(14),
+
+                // Title & Description
                 TextField(
                   controller: _premiumTitle,
                   decoration: InputDecoration(
@@ -100,6 +104,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                   ),
                 ),
                 MySpacing.height(12),
+
+                // Prices
                 Row(
                   children: [
                     Expanded(
@@ -107,7 +113,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                         controller: _premiumMonthly,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: "Monthly Price (PKR)",
+                          labelText: "Monthly Price (QAR)",
                           filled: true,
                           fillColor: background,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -120,7 +126,7 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                         controller: _premiumAnnual,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: "Annual Price (PKR)",
+                          labelText: "Annual Price (QAR)",
                           filled: true,
                           fillColor: background,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -130,17 +136,40 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                   ],
                 ),
                 MySpacing.height(12),
-                TextField(
-                  controller: _premiumDiscount,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Discount (%)",
-                    filled: true,
-                    fillColor: background,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+
+                // Discounts
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _premiumMonthlyDiscount,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: "Monthly Discount (%)",
+                          filled: true,
+                          fillColor: background,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    MySpacing.width(12),
+                    Expanded(
+                      child: TextField(
+                        controller: _premiumAnnualDiscount,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: "Annual Discount (%)",
+                          filled: true,
+                          fillColor: background,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 MySpacing.height(18),
+
+                // Save Button
                 Align(
                   alignment: Alignment.centerRight,
                   child: MyButton(
@@ -149,13 +178,16 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                         : () async {
                       final monthly = double.tryParse(_premiumMonthly.text.trim()) ?? 0;
                       final annual = double.tryParse(_premiumAnnual.text.trim()) ?? 0;
-                      final discount = double.tryParse(_premiumDiscount.text.trim()) ?? 0;
+                      final monthlyDiscount = double.tryParse(_premiumMonthlyDiscount.text.trim()) ?? 0;
+                      final annualDiscount = double.tryParse(_premiumAnnualDiscount.text.trim()) ?? 0;
+
                       await _saveMembership('premium', {
                         'title': _premiumTitle.text.trim(),
                         'description': _premiumDesc.text.trim(),
                         'monthlyPrice': monthly,
                         'annualPrice': annual,
-                        'discountPercent': discount,
+                        'monthlyDiscount': monthlyDiscount,
+                        'annualDiscount': annualDiscount,
                         'type': 'premium',
                       });
                       Navigator.pop(context);
@@ -164,7 +196,11 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                     padding: MySpacing.xy(20, 12),
                     borderRadiusAll: 10,
                     child: _isSaving
-                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
                         : MyText.bodyMedium("Save", color: Colors.white),
                   ),
                 ),
@@ -176,11 +212,11 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(String label, String value, {IconData? icon}) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: primary),
-        MySpacing.width(6),
+        if (icon != null) Icon(icon, size: 16, color: primary),
+        if (icon != null) MySpacing.width(6),
         MyText.bodySmall("$label: ", color: Colors.grey[700]),
         MyText.bodySmall(value, fontWeight: 700),
       ],
@@ -215,7 +251,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                   'description': 'Unlock full access and exclusive tools.',
                   'monthlyPrice': 1999,
                   'annualPrice': 19999,
-                  'discountPercent': 0
+                  'monthlyDiscount': 0,
+                  'annualDiscount': 0,
                 };
 
             Widget buildCard({
@@ -224,14 +261,18 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
               bool isPremium = false,
               double? monthly,
               double? annual,
-              double? discount,
+              double? monthlyDiscount,
+              double? annualDiscount,
               VoidCallback? onEdit,
             }) {
               return Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: Colors.white,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 6))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 6))
+                  ],
                 ),
                 padding: const EdgeInsets.all(22),
                 child: Column(
@@ -239,7 +280,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                   children: [
                     Row(
                       children: [
-                        Icon(isPremium ? LucideIcons.star : LucideIcons.badge, color: isPremium ? primary : Colors.green, size: 22),
+                        Icon(isPremium ? LucideIcons.star : LucideIcons.badge,
+                            color: isPremium ? primary : Colors.green, size: 22),
                         MySpacing.width(10),
                         MyText.titleSmall(title, fontWeight: 700, color: darkText),
                         const Spacer(),
@@ -256,18 +298,23 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                     if (isPremium)
                       Row(
                         children: [
-                          _buildInfoRow(LucideIcons.wallet, "Monthly", "PKR ${monthly?.toStringAsFixed(0) ?? '0'}"),
+                          _buildInfoRow(
+                              "Monthly",
+                              "QAR ${monthly?.toStringAsFixed(0) ?? '0'} (-${monthlyDiscount?.toStringAsFixed(0) ?? '0'}%)",
+                              icon: LucideIcons.wallet),
                           MySpacing.width(12),
-                          _buildInfoRow(LucideIcons.calendar, "Annual", "PKR ${annual?.toStringAsFixed(0) ?? '0'}"),
-                          MySpacing.width(12),
-                          _buildInfoRow(LucideIcons.tag, "Discount", "${discount?.toStringAsFixed(0) ?? '0'}%"),
+                          _buildInfoRow(
+                              "Annual",
+                              "QAR ${annual?.toStringAsFixed(0) ?? '0'} (-${annualDiscount?.toStringAsFixed(0) ?? '0'}%)",
+                              icon: LucideIcons.calendar),
                         ],
                       )
                     else
                       Container(
                         margin: const EdgeInsets.only(top: 8),
                         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                         child: MyText.bodySmall("Free forever", color: Colors.green[800], fontWeight: 700),
                       ),
                     MySpacing.height(20),
@@ -277,12 +324,12 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildInfoRow(LucideIcons.users, "Active Members", "1,234"),
-                          _buildInfoRow(LucideIcons.trending_up, "Engagement", "92%"),
+                          _buildInfoRow("Active Members", "1,234", icon: LucideIcons.users),
+                          _buildInfoRow("Engagement", "92%", icon: LucideIcons.trending_up),
                         ],
                       )
                     else
-                      _buildInfoRow(LucideIcons.users, "Active Members", "782"),
+                      _buildInfoRow("Active Members", "782", icon: LucideIcons.users),
                   ],
                 ),
               );
@@ -308,7 +355,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                         isPremium: true,
                         monthly: premiumData['monthlyPrice']?.toDouble(),
                         annual: premiumData['annualPrice']?.toDouble(),
-                        discount: premiumData['discountPercent']?.toDouble(),
+                        monthlyDiscount: premiumData['monthlyDiscount']?.toDouble(),
+                        annualDiscount: premiumData['annualDiscount']?.toDouble(),
                         onEdit: () => _openEditPremiumModal(premiumDoc),
                       ),
                     ),
@@ -324,7 +372,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                       isPremium: true,
                       monthly: premiumData['monthlyPrice']?.toDouble(),
                       annual: premiumData['annualPrice']?.toDouble(),
-                      discount: premiumData['discountPercent']?.toDouble(),
+                      monthlyDiscount: premiumData['monthlyDiscount']?.toDouble(),
+                      annualDiscount: premiumData['annualDiscount']?.toDouble(),
                       onEdit: () => _openEditPremiumModal(premiumDoc),
                     ),
                   ],
@@ -372,7 +421,8 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                                   'description': 'Unlock full access and exclusive tools.',
                                   'monthlyPrice': 1999,
                                   'annualPrice': 19999,
-                                  'discountPercent': 0,
+                                  'monthlyDiscount': 0,
+                                  'annualDiscount': 0,
                                   'type': 'premium'
                                 });
                               }

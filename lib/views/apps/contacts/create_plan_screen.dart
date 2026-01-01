@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:webkit/helpers/theme/app_style.dart';
 import 'package:webkit/helpers/utils/ui_mixins.dart';
 import 'package:webkit/helpers/widgets/my_button.dart';
 import 'package:webkit/helpers/widgets/my_container.dart';
@@ -52,10 +51,73 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
 
 
 
-  // Predefined amenities
-  final List<String> predefinedAmenities = [
-    'Gym', 'Pool', 'Wifi', 'Parking', 'Spa', 'Restaurant', 'Bar'
-  ];
+  // // Predefined amenities
+  // final List<String> predefinedAmenities = [
+  //   'Gym', 'Pool', 'Wifi', 'Parking', 'Spa', 'Restaurant', 'Bar'
+  // ];
+
+
+  /// Master amenities list with default icons
+  final Map<String, IconData> predefinedAmenitiesWithIcons = {
+    // Fitness & Wellness
+    'Gym': LucideIcons.dumbbell,
+    'Yoga Studio': LucideIcons.activity,
+    'Personal Trainer': LucideIcons.user,
+    'Spa': LucideIcons.sparkles,
+    'Sauna': LucideIcons.thermometer,
+    'Steam Room': LucideIcons.cloud,
+    'Massage': LucideIcons.hand,
+    'Meditation Room': LucideIcons.brain,
+
+    // Sports & Activities
+    'Swimming Pool': LucideIcons.waves,
+    'Indoor Pool': LucideIcons.droplets,
+    'Outdoor Pool': LucideIcons.sun,
+    'Tennis Court': LucideIcons.circle_dot,
+    'Squash Court': LucideIcons.box,
+    'Badminton Court': LucideIcons.feather,
+    'Basketball Court': LucideIcons.circle,
+    'Football Ground': LucideIcons.circle,
+
+    // Facilities
+    'Locker Room': LucideIcons.lock,
+    'Shower': LucideIcons.shower_head,
+    'Changing Room': LucideIcons.shirt,
+    'Parking': LucideIcons.car,
+    'Valet Parking': LucideIcons.car_front,
+    'Wheelchair Access': LucideIcons.accessibility,
+    'Elevator': LucideIcons.arrow_up_down,
+
+    // Connectivity & Comfort
+    'Free Wifi': LucideIcons.wifi,
+    'Air Conditioning': LucideIcons.wind,
+    'Heating': LucideIcons.flame,
+    'Power Backup': LucideIcons.battery_charging,
+
+    // Food & Beverage
+    'Cafe': LucideIcons.coffee,
+    'Restaurant': LucideIcons.utensils,
+    'Juice Bar': LucideIcons.glass_water,
+    'Protein Bar': LucideIcons.beef,
+
+    // Lifestyle
+    'Kids Area': LucideIcons.baby,
+    'Daycare': LucideIcons.house_plus,
+    'Music': LucideIcons.music,
+    'Live Classes': LucideIcons.video,
+    'Work Lounge': LucideIcons.briefcase,
+
+    // Safety & Security
+    'CCTV': LucideIcons.camera,
+    'Security Guard': LucideIcons.shield,
+    'First Aid': LucideIcons.heart_pulse,
+
+    // Extras
+    'Merchandise Shop': LucideIcons.shopping_bag,
+    'Towel Service': LucideIcons.layers,
+    'Laundry': LucideIcons.washing_machine,
+  };
+
 
 // Map of available icons
   final Map<String, IconData> amenityIcons = {
@@ -114,6 +176,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
       return bytes;
     }
   }
+  IconData _iconFromString(String key) {
+    return predefinedAmenitiesWithIcons[key] ?? LucideIcons.star;
+  }
 
   // Add amenity dialog
   Future<void> _addAmenityDialog() async {
@@ -133,34 +198,48 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
               decoration: const InputDecoration(labelText: "Title"),
             ),
             MySpacing.height(12),
-            DropdownButtonFormField<String>(
-              value: selectedIcon,
-              items: amenityIcons.keys
-                  .map((k) => DropdownMenuItem(
-                value: k,
-                child: Row(
-                  children: [
-                    Icon(amenityIcons[k], size: 18, color: Colors.black87),
-                    MySpacing.width(8),
-                    Text(k),
-                  ],
-                ),
-              ))
-                  .toList(),
-              onChanged: (v) => selectedIcon = v ?? 'star',
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
+        DropdownButtonFormField<String>(
+          hint: const Text("Select Amenity"),
+          items: predefinedAmenitiesWithIcons.entries.map((entry) {
+            return DropdownMenuItem<String>(
+              value: entry.key,
+              child: Row(
+                children: [
+                  Icon(entry.value, size: 18, color: primary),
+                  const SizedBox(width: 8),
+                  Text(entry.key),
+                ],
               ),
-              dropdownColor: Colors.white, // ✅ fixes transparency
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value == null) return;
+
+            final alreadyExists =
+            amenities.any((a) => a['title'] == value);
+
+            if (alreadyExists) return;
+
+            amenities.add({
+              'title': value,
+              'icon': value, // 🔥 store key, not codePoint
+            });
+
+            setState(() {});
+          },
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
             ),
-          ],
+          ),
+          dropdownColor: Colors.white,
+        )
+
+
+        ],
         ),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
@@ -182,50 +261,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
     );
   }
 
-
-  /*Future<void> _addAmenityDialog() async {
-    final titleCtrl = TextEditingController();
-    final iconCtrl = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Add Amenity"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              decoration: const InputDecoration(labelText: "Title"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: iconCtrl,
-              decoration: const InputDecoration(labelText: "Icon (e.g. star, heart)"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (titleCtrl.text.isNotEmpty) {
-                amenities.add({
-                  "title": titleCtrl.text,
-                  "icon": iconCtrl.text.isEmpty ? "star" : iconCtrl.text,
-                });
-                setState(() {});
-                Get.back();
-              }
-            },
-            child: const Text("Add"),
-          ),
-        ],
-      ),
-    );
-  }*/
 
   Future<List<String>> _uploadImages(List<Uint8List> images, String folder) async {
     final urls = <String>[];
@@ -495,20 +530,30 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
                              Expanded(
                                child: DropdownButtonFormField<String>(
                                  hint: const Text("Select Amenity"),
-                                 items: predefinedAmenities
-                                     .map((e) => DropdownMenuItem(
-                                   value: e,
-                                   child: Text(e),
-                                 ))
-                                     .toList(),
+                                 items: predefinedAmenitiesWithIcons.entries.map((entry) {
+                                   return DropdownMenuItem<String>(
+                                     value: entry.key,
+                                     child: Row(
+                                       children: [
+                                         Icon(entry.value, size: 18, color: primary),
+                                         const SizedBox(width: 8),
+                                         Text(entry.key),
+                                       ],
+                                     ),
+                                   );
+                                 }).toList(),
                                  onChanged: (value) {
-                                   if (value != null) {
-                                     amenities.add({
-                                       'title': value,
-                                       'icon': 'star', // default icon
-                                     });
-                                     setState(() {});
-                                   }
+                                   if (value == null) return;
+
+                                   final exists = amenities.any((a) => a['title'] == value);
+                                   if (exists) return;
+
+                                   amenities.add({
+                                     'title': value,
+                                     'icon': value, // store key
+                                   });
+
+                                   setState(() {});
                                  },
                                  decoration: InputDecoration(
                                    filled: true,
@@ -520,9 +565,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
                                      borderSide: BorderSide.none,
                                    ),
                                  ),
-                                 dropdownColor: Colors.white, // <-- makes the list visible
+                                 dropdownColor: Colors.white,
                                ),
                              ),
+
                              MySpacing.width(12),
 
                              // Icon selection
@@ -573,22 +619,23 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
                            Wrap(
                              spacing: 8,
                              runSpacing: 8,
-                             children: amenities
-                                 .map((a) => Chip(
-                               avatar: Icon(
-                                 amenityIcons[a['icon']] ?? LucideIcons.star,
-                                 size: 16,
-                                 color: primary,
-                               ),
-                               label: Text(a['title']),
-                               deleteIcon: const Icon(Icons.close, size: 16),
-                               onDeleted: () {
-                                 setState(() => amenities.remove(a));
-                               },
-                               backgroundColor: Colors.grey[100],
-                             ))
-                                 .toList(),
+                             children: amenities.map((a) {
+                               return Chip(
+                                 avatar: Icon(
+                                   _iconFromString(a['title']),
+                                   size: 16,
+                                   color: primary,
+                                 ),
+                                 label: Text(a['title']),
+                                 deleteIcon: const Icon(Icons.close, size: 16),
+                                 onDeleted: () {
+                                   setState(() => amenities.remove(a));
+                                 },
+                                 backgroundColor: Colors.grey[100],
+                               );
+                             }).toList(),
                            ),
+
                        ],
                      ),
                    ),
@@ -725,3 +772,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
     );
   }
 }
+
+
+

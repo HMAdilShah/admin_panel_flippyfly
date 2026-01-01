@@ -157,7 +157,9 @@ class _MemberListState extends State<MemberList> {
                   final user = filtered[idx];
                   final serial = idx + 1;
                   return GestureDetector(
-                    onTap: () => Get.to(() => ProfileViewPage(userId: user.id)),
+                    onTap: () => Get.to(() => ProfileViewPage(userId: user.id),
+                      preventDuplicates: true,
+                    ),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -257,7 +259,8 @@ class _MemberListState extends State<MemberList> {
                               children: [
                                 // View Button
                                 MyButton(
-                                  onPressed: () => Get.to(() => ProfileViewPage(userId: user.id)),
+                                  onPressed: () => Get.to(() => ProfileViewPage(userId: user.id),
+                                    preventDuplicates: true,),
                                   backgroundColor: primary.withOpacity(0.15),
                                   borderRadiusAll: 12,
                                   padding: MySpacing.xy(14, 10),
@@ -280,6 +283,7 @@ class _MemberListState extends State<MemberList> {
                                         ],
                                       ),
                                     );
+                                    if (!mounted) return;   // Add this
                                     if (confirm == true) controller.blockUser(user);
                                   },
                                   backgroundColor: accentPink.withOpacity(0.15),
@@ -330,6 +334,8 @@ class _MemberListState extends State<MemberList> {
             .doc(userId)
             .collection('purchases')
             .add(plan.toMap());
+        if (!mounted) return; // <-- add after await
+
       }
     }
 
@@ -344,7 +350,6 @@ class _MemberListState extends State<MemberList> {
 
 }
 
-/// Profile view page with purchased plans and payment status
 class ProfileViewPage extends StatefulWidget {
   final String userId;
   const ProfileViewPage({super.key, required this.userId});
@@ -354,52 +359,48 @@ class ProfileViewPage extends StatefulWidget {
 }
 
 class _ProfileViewPageState extends State<ProfileViewPage> {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
   final Color primary = const Color(0xFF835FFF);
   final Color background = const Color(0xFFEFF1FE);
   final Color darkText = const Color(0xFF222222);
 
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-
   Map<String, dynamic>? userData;
-  List<UserPlan> purchases = [];
+  List<UserPaymentPlan> plans = [];
   bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserAndPurchases();
+    _loadData();
   }
 
-  Future<void> _loadUserAndPurchases() async {
+  Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => loading = true);
-    final doc = await _db.collection('users').doc(widget.userId).get();
-    if (!doc.exists) {
-      setState(() {
-        userData = null;
-        purchases = [];
-        loading = false;
-      });
+
+    final userDoc = await _db.collection('users').doc(widget.userId).get();
+    if (!mounted) return;
+
+    if (!userDoc.exists) {
+      setState(() => loading = false);
       return;
     }
-    userData = doc.data() ?? {};
 
-    final sub = await _db.collection('users').doc(widget.userId).collection('purchases').orderBy('purchase_date', descending: true).get();
-    purchases = sub.docs.map((d) => UserPlan.fromMap(d.id, d.data() as Map<String, dynamic>)).toList();
+    userData = userDoc.data();
 
-    // fallback to embedded purchases
-    if (purchases.isEmpty && userData!['purchases'] is List) {
-      final list = (userData!['purchases'] as List).cast<Map<String, dynamic>>();
-      purchases = List.generate(list.length, (i) => UserPlan.fromMap('p_$i', list[i]));
-    }
+    final snap = await _db
+        .collection('users_plan')
+        .where('user_id', isEqualTo: widget.userId)
+        .orderBy('created_at', descending: true)
+        .get();
 
+    if (!mounted) return;
+
+    plans = snap.docs.map(UserPaymentPlan.fromDoc).toList();
+
+    if (!mounted) return;
     setState(() => loading = false);
-  }
-
-  Color _paymentColor(String s) {
-    s = s.toLowerCase();
-    if (s == 'paid' || s == 'completed') return Colors.green;
-    if (s == 'pending' || s == 'partial') return Colors.orange;
-    return Colors.red;
   }
 
   @override
@@ -407,117 +408,130 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        title: Text("${userData?['name'] ?? 'User'}'s Profile"),
+        title: Text("${userData?['name'] ?? 'User'} Profile"),
         backgroundColor: primary,
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User info card
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)]),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 44,
-                      backgroundImage: (userData?['avatar_url'] ?? '').isNotEmpty
-                          ? NetworkImage(userData?['avatar_url'] ?? '')
-                          : null,
-                      backgroundColor: Colors.grey[200],
-                      child: (userData?['avatar_url'] ?? '').isEmpty ? const Icon(Icons.person, size: 36, color: Colors.white) : null,
-                    ),
-                    MySpacing.width(16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          MyText.titleLarge(userData?['name'] ?? '-', fontWeight: 700, color: darkText),
-                          MySpacing.height(6),
-                          MyText.bodyMedium(userData?['email'] ?? '-', color: Colors.black54),
-                          MySpacing.height(6),
-                          MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}", color: Colors.black54),
-                          MySpacing.height(8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(color: primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                            child: MyText.bodySmall(userData?['user_status'] ?? 'active', color: primary, fontWeight: 700),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              MySpacing.height(20),
-              MyText.titleMedium("Purchased Plans", fontWeight: 700, color: darkText),
-              MySpacing.height(12),
-
-              if (purchases.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                  child: MyText.bodyMedium("No purchased plans found.", color: Colors.black54),
-                )
-              else
-                Column(
-                  children: List.generate(purchases.length, (idx) {
-                    final p = purchases[idx];
-                    final payment = p.paymentStatus;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8)]),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // serial
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(color: primary.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-                            child: Center(child: MyText.bodySmall("#${idx + 1}", color: primary, fontWeight: 700)),
-                          ),
-                          MySpacing.width(12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                  MyText.titleSmall(p.name, fontWeight: 700, color: darkText),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(color: _paymentColor(payment).withOpacity(0.14), borderRadius: BorderRadius.circular(8)),
-                                    child: MyText.bodySmall(payment.toUpperCase(), color: _paymentColor(payment), fontWeight: 700),
-                                  ),
-                                ]),
-                                MySpacing.height(6),
-                                MyText.bodySmall("Amount: PKR ${p.amount.toStringAsFixed(0)}", color: Colors.black54),
-                                MySpacing.height(4),
-                                MyText.bodySmall("Purchased: ${p.purchaseDate != null ? p.purchaseDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
-                                MySpacing.height(2),
-                                MyText.bodySmall("Expires: ${p.expiryDate != null ? p.expiryDate!.toLocal().toString().split(' ').first : '-'}", color: Colors.black54),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _userHeader(),
+            const SizedBox(height: 24),
+            MyText.titleMedium("User Plans", fontWeight: 700),
+            const SizedBox(height: 12),
+            plans.isEmpty ? _emptyPlans() : _plansGrid(),
+          ],
         ),
       ),
     );
   }
+
+  Widget _userHeader() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: Colors.grey[200],
+            child: const Icon(Icons.person, size: 34),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MyText.titleLarge(userData?['name'] ?? '-', fontWeight: 700),
+                MyText.bodySmall(userData?['email'] ?? '-', color: Colors.black54),
+                MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}", color: Colors.black54),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyPlans() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: MyText.bodyMedium("No plans created by this user.", color: Colors.black54),
+    );
+  }
+  Widget _plansGrid() {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: plans.map((p) {
+        return SizedBox(
+          width: (MediaQuery.of(context).size.width - 56) / 2, // two cards per row with spacing
+          child: _planCard(p),
+        );
+      }).toList(),
+    );
+  }
+
+
+  Widget _planCard(UserPaymentPlan p) {
+    final statusColor = p.availableAmount > 0 ? Colors.green : Colors.orange;
+    final statusText = p.availableAmount > 0 ? "Active" : "Expired";
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // important: shrink to fit content
+        children: [
+          // Plan Name
+          MyText.bodyMedium(p.planId, fontWeight: 700, color: darkText),
+          const SizedBox(height: 6),
+
+          // Amount & Months
+          MyText.bodySmall("Total Flipis: ${p.totalFlipis}", fontWeight: 600),
+          MyText.bodySmall("Available: ${p.availableAmount}"),
+          MyText.bodySmall("Duration: ${p.totalMonths} months"),
+          const SizedBox(height: 6),
+
+          // Status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: MyText.bodySmall(statusText, color: statusColor, fontWeight: 600),
+          ),
+
+          const SizedBox(height: 6),
+
+          // Date
+          Align(
+            alignment: Alignment.bottomRight,
+            child: MyText.bodySmall(
+              p.formattedDateTime,
+              color: Colors.black45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
 
 class UserPlan {
   final String id;
@@ -557,3 +571,46 @@ class UserPlan {
     };
   }
 }
+
+
+class UserPaymentPlan {
+  final String docId;
+  final String planId;
+  final int totalFlipis;
+  final double availableAmount;
+  final int totalMonths;
+  final String monthlyPayment;
+  final List<String> schedule;
+  final DateTime? createdAt;
+  final String formattedDateTime;
+
+  UserPaymentPlan({
+    required this.docId,
+    required this.planId,
+    required this.totalFlipis,
+    required this.availableAmount,
+    required this.totalMonths,
+    required this.monthlyPayment,
+    required this.schedule,
+    this.createdAt,
+    required this.formattedDateTime,
+  });
+
+  factory UserPaymentPlan.fromDoc(DocumentSnapshot doc) {
+    final map = doc.data() as Map<String, dynamic>;
+    return UserPaymentPlan(
+      docId: doc.id,
+      planId: map['plan_id'] ?? '----',
+      totalFlipis: map['total_flipis'] ?? 0,
+      availableAmount: (map['available_amount'] ?? 0).toDouble(),
+      totalMonths: map['total_months'] ?? 0,
+      monthlyPayment: map['monthly_payment'] ?? '0',
+      schedule: (map['schedule'] as List?)?.cast<String>() ?? [],
+      createdAt: map['created_at'] != null
+          ? (map['created_at'] as Timestamp).toDate()
+          : null,
+      formattedDateTime: map['formatted_date_time'] ?? '',
+    );
+  }
+}
+

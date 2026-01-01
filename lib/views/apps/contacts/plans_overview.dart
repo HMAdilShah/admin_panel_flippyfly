@@ -64,6 +64,7 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
     );
   }
 
+/*
   Widget _planCard(Map<String, dynamic> plan, int index) {
     final title = plan['title'] ?? 'Untitled Plan';
     final from = _formatDate(plan['fromDate']);
@@ -226,6 +227,207 @@ class _PlansOverviewState extends State<PlansOverview> with UIMixin {
                   ),
                 MySpacing.height(18),
 
+                // 🔹 Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    MyButton(
+                      onPressed: () {
+                        Get.to(() => const PlanDetailScreen(),
+                            arguments: {'planId': plan['docId']});
+                      },
+                      backgroundColor: Colors.grey[100],
+                      borderRadiusAll: 10,
+                      padding: MySpacing.xy(18, 10),
+                      child: Row(children: [
+                        const Icon(LucideIcons.eye, size: 16),
+                        MySpacing.width(8),
+                        MyText.bodySmall("View"),
+                      ]),
+                    ),
+                    MySpacing.width(12),
+                    MyButton(
+                      onPressed: () {
+                        Get.to(() => PlanEditScreen(planId: plan['docId']),
+                            arguments: {'planId': plan['docId']});
+                      },
+                      backgroundColor: primary,
+                      borderRadiusAll: 10,
+                      padding: MySpacing.xy(18, 10),
+                      child: Row(children: [
+                        const Icon(Icons.edit, size: 16, color: Colors.white),
+                        MySpacing.width(8),
+                        MyText.bodySmall("Edit", color: Colors.white),
+                      ]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+*/
+
+  Widget _planCard(Map<String, dynamic> plan, int index) {
+    final title = plan['title'] ?? 'Untitled Plan';
+    final from = _formatDate(plan['fromDate']);
+    final to = _formatDate(plan['toDate']);
+    final coins = (plan['coins'] ?? 0).toString();
+    final images = (plan['images'] as List<dynamic>?)?.cast<String>() ?? [];
+    final expImages = (plan['experiencesImages'] as List<dynamic>?)?.cast<String>() ?? [];
+    final isFor = (plan['isFor'] ?? 'premium') as String;
+    final isSpecial = (plan['isSpecialOffer'] ?? false) as bool;
+    final expiry = _formatDate(plan['expiryDate']);
+    final description = (plan['description'] ?? '').toString();
+    final amenitiesList = (plan['amenities'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+
+    final bool isActivePage = index == _pageIndex;
+
+    IconData _getAmenityIcon(String key) {
+      // Fallback icons
+      const Map<String, IconData> fallbackIcons = {
+        'star': LucideIcons.star,
+        'heart': LucideIcons.heart,
+        'wifi': LucideIcons.wifi,
+        'coffee': LucideIcons.coffee,
+        'music': LucideIcons.music,
+        'car': LucideIcons.car,
+        'dumbbell': LucideIcons.dumbbell,
+        'sun': LucideIcons.sun,
+      };
+      if (plan['predefinedAmenitiesWithIcons'] != null &&
+          (plan['predefinedAmenitiesWithIcons'] as Map).containsKey(key)) {
+        return LucideIcons.star; // Or customize if you store actual IconData
+      }
+      return fallbackIcons[key] ?? LucideIcons.star;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 320),
+      margin: EdgeInsets.only(
+        top: isActivePage ? 6 : 18,
+        bottom: isActivePage ? 6 : 18,
+        left: 6,
+        right: 6,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isActivePage ? 0.08 : 0.04),
+            blurRadius: isActivePage ? 18 : 8,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🔹 Plan Images carousel
+          if (images.isNotEmpty)
+            SizedBox(
+              height: 180,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: images.length,
+                itemBuilder: (context, i) => Padding(
+                  padding: const EdgeInsets.all(6.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(images[i], width: 250, height: 180, fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+            )
+          else
+            Container(
+              height: 180,
+              color: background,
+              alignment: Alignment.center,
+              child: MyText.titleMedium(title, fontWeight: 700),
+            ),
+
+          // 🔹 Title + Dates + Badges
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MyText.titleMedium(title, fontWeight: 800),
+                MySpacing.height(4),
+                MyText.bodySmall("$from → $to", muted: true),
+                MySpacing.height(6),
+                Row(
+                  children: [
+                    _buildBadge(isFor == 'free' ? 'FREE' : 'PREMIUM',
+                        color: isFor == 'free' ? Colors.green : primary),
+                    if (isSpecial) ...[
+                      MySpacing.width(8),
+                      _buildBadge("SPECIAL", color: accentPink)
+                    ],
+                  ],
+                ),
+                MySpacing.height(12),
+                // Coins + Expiry
+                Row(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(LucideIcons.coins, size: 18, color: Colors.orange),
+                        MySpacing.width(6),
+                        MyText.bodySmall("$coins coins", fontWeight: 700),
+                      ],
+                    ),
+                    const Spacer(),
+                    MyText.bodySmall("Expiry: $expiry", muted: true),
+                  ],
+                ),
+                MySpacing.height(12),
+                // 🔹 Description
+                if (description.isNotEmpty)
+                  MyText.bodyMedium(description, color: Colors.grey[700]),
+                MySpacing.height(12),
+                // 🔹 Amenities
+                if (amenitiesList.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: amenitiesList.map((a) {
+                      final icon = a['icon'] ?? 'star';
+                      final title = a['title'] ?? '';
+                      return Chip(
+                        avatar: Icon(_getAmenityIcon(icon), size: 16, color: primary),
+                        label: Text(title),
+                        backgroundColor: Colors.grey[100],
+                      );
+                    }).toList(),
+                  ),
+                MySpacing.height(12),
+                // 🔹 Experiences Images
+                if (expImages.isNotEmpty) ...[
+                  MyText.bodyMedium("Experiences", fontWeight: 700),
+                  MySpacing.height(6),
+                  SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: expImages.length,
+                      itemBuilder: (context, i) => Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(expImages[i], width: 120, height: 120, fit: BoxFit.cover),
+                        ),
+                      ),
+                    ),
+                  ),
+                  MySpacing.height(12),
+                ],
                 // 🔹 Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
