@@ -217,7 +217,7 @@ class _FileManagerState extends State<FileManager> with SingleTickerProviderStat
                                 buildFileData(contentTheme.secondary, LucideIcons.file, "Compile version", 40802189312),
                                 buildFileData(contentTheme.pink, LucideIcons.file_image, "Picture", 20401094656),
                                 buildFileData(contentTheme.red, LucideIcons.file_text, "Licence.pdf", 4718592),
-                                buildFileData(contentTheme.primary, LucideIcons.file_type_2, "Wedding-project.ppt", 419430400),
+                                buildFileData(contentTheme.primary, LucideIcons.file_type, "Wedding-project.ppt", 419430400),
                                 buildFileData(contentTheme.success, LucideIcons.file_x, "Database.xlsx", 17825792),
                                 buildFileData(contentTheme.info, LucideIcons.folder, "Songs", 89900000000),
                               ],
