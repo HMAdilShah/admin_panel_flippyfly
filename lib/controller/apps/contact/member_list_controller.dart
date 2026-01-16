@@ -31,6 +31,33 @@ class MemberListController extends GetxController {
     });
   }
 
+  Future<void> fetchUsers(bool? isFree) async {
+    loading.value = true;
+
+    try {
+      Query query = _db.collection('users');
+
+      // Apply filter only if isFree is NOT null
+      if (isFree != null) {
+        query = query.where(
+          'plan_name',
+          isEqualTo: isFree ? 'Standard' : 'Premium',
+        );
+      }
+
+      final snapshot = await query.get();
+
+      final loaded =
+      snapshot.docs.map((d) => AppUserModel.fromDoc(d)).toList();
+
+      users.assignAll(loaded);
+    } catch (e) {
+      debugPrint("Error loading users: $e");
+    } finally {
+      loading.value = false;
+    }
+  }
+
   Future<List<AppUserModel>> fetchUsersOnce() async {
     final snapshot = await _db.collection('users').get();
     return snapshot.docs.map((d) => AppUserModel.fromDoc(d)).toList();

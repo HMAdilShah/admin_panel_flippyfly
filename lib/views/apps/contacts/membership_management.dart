@@ -2,13 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
-import 'package:webkit/helpers/theme/app_style.dart';
 import 'package:webkit/helpers/utils/ui_mixins.dart';
 import 'package:webkit/helpers/widgets/my_button.dart';
 import 'package:webkit/helpers/widgets/my_container.dart';
 import 'package:webkit/helpers/widgets/my_spacing.dart';
 import 'package:webkit/helpers/widgets/my_text.dart';
 import 'package:webkit/helpers/widgets/responsive.dart';
+import 'package:webkit/views/apps/contacts/member_list_with_type.dart';
 import 'package:webkit/views/layouts/layout.dart';
 
 class MembershipManagement extends StatefulWidget {
@@ -30,6 +30,9 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
   final _premiumAnnual = TextEditingController();
   final _premiumMonthlyDiscount = TextEditingController();
   final _premiumAnnualDiscount = TextEditingController();
+
+  int totalFreeUsers = 0;
+  int totalPremiumUsers = 0;
 
   bool _isSaving = false;
   final _db = FirebaseFirestore.instance;
@@ -223,6 +226,30 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
     );
   }
 
+  Future<void> getUserCount() async {
+    final freeSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('plan_name', isEqualTo: 'Standard')
+        .get();
+
+    final premiumSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('plan_name', isEqualTo: 'Premium')
+        .get();
+
+    setState(() {
+      totalFreeUsers = freeSnapshot.size;
+      totalPremiumUsers = premiumSnapshot.size;
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    getUserCount();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 900;
@@ -324,12 +351,21 @@ class _MembershipManagementState extends State<MembershipManagement> with UIMixi
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildInfoRow("Active Members", "1,234", icon: LucideIcons.users),
+                          InkWell(
+                              onTap: (){
+                                Get.to(() => const MemberListWithType(),
+                                    arguments: false);
+                            },
+                              child: _buildInfoRow("Active Members", totalPremiumUsers.toString(), icon: LucideIcons.users)),
                           _buildInfoRow("Engagement", "92%", icon: LucideIcons.trending_up),
                         ],
                       )
                     else
-                      _buildInfoRow("Active Members", "782", icon: LucideIcons.users),
+                      InkWell(
+                          onTap: (){
+                            Get.to(() => const MemberListWithType(),
+                                arguments: true);},
+                          child: _buildInfoRow("Active Members", totalFreeUsers.toString(), icon: LucideIcons.users)),
                   ],
                 ),
               );
