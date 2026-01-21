@@ -83,7 +83,9 @@ getPageRoute() {
     GetPage(
         name: '/',
         page: () => DashboardPage(),
-        middlewares: [AuthMiddleware()]),
+
+        middlewares: [AuthMiddleware(),
+        ]),
 
     GetPage(name: '/faqs', page: () => FaqsPage()),
 

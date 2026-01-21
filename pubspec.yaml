@@ -75,6 +75,7 @@ dependencies:
   firebase_storage: ^12.4.5
   flutter_stripe: ^11.5.0
   image:
+  lucide_icons:
 
 
 dev_dependencies:
