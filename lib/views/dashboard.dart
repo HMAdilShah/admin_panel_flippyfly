@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:get/instance_manager.dart';
@@ -884,6 +885,475 @@ class DashboardPageState extends State<DashboardPage> with SingleTickerProviderS
           ),
         ],
       ),
+    );
+  }
+}
+*/
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:webkit/helpers/theme/admin_theme.dart';
+import 'package:webkit/helpers/utils/my_shadow.dart';
+import 'package:webkit/helpers/widgets/my_breadcrumb.dart';
+import 'package:webkit/helpers/widgets/my_breadcrumb_item.dart';
+import 'package:webkit/helpers/widgets/my_card.dart';
+import 'package:webkit/helpers/widgets/my_container.dart';
+import 'package:webkit/helpers/widgets/my_flex.dart';
+import 'package:webkit/helpers/widgets/my_flex_item.dart';
+import 'package:webkit/helpers/widgets/my_spacing.dart';
+import 'package:webkit/helpers/widgets/my_text.dart';
+import 'package:webkit/views/apps/dashboard/models/dashboard_controller.dart';
+import 'package:webkit/views/layouts/layout.dart';
+
+class DashboardPage extends StatelessWidget {
+  DashboardPage({super.key});
+
+  final DashboardController controller = Get.put(DashboardController());
+
+  @override
+  Widget build(BuildContext context) {
+    final contentTheme = AdminTheme.theme.contentTheme;
+    const double flexSpacing = 16.0;
+
+    return Layout(
+      child: GetBuilder<DashboardController>(
+        builder: (_) {
+          return SingleChildScrollView(
+            padding: MySpacing.xy(flexSpacing, flexSpacing / 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ================= HEADER =================
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    MyText.titleMedium("Dashboard", fontSize: 22, fontWeight: 700),
+                    MyBreadcrumb(
+                      children: [
+                        MyBreadcrumbItem(name: 'Dashboard', active: true),
+                      ],
+                    ),
+                  ],
+                ),
+                MySpacing.height(flexSpacing),
+
+                // ================= TOP STATS =================
+                MyFlex(
+                  contentPadding: false,
+                  children: [
+                    statCard("Total Users", controller.totalUsers, LucideIcons.users, contentTheme.primary),
+                    statCard("Paid Users", controller.paidUsers, LucideIcons.user_check, contentTheme.success),
+                    statCard("Free Users", controller.freeUsers, LucideIcons.user_minus, contentTheme.warning),
+                    statCard("Resolved Tickets", controller.ticketsResolved, LucideIcons.check_check, contentTheme.info),
+                    statCard("In Progress", controller.ticketsInProgress, LucideIcons.clock, contentTheme.danger),
+                  ],
+                ),
+                MySpacing.height(flexSpacing),
+
+                // ================= REVENUE + USERS BY COUNTRY =================
+                MyFlex(
+                  contentPadding: false,
+                  children: [
+                    // Revenue Graph
+                    MyFlexItem(
+                      sizes: "lg-6 md-12 sm-12",
+                      child: MyCard(
+                        padding: MySpacing.all(16),
+                        shadow: MyShadow(elevation: .6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("Revenue by Plan Type", fontWeight: 600),
+                            MySpacing.height(12),
+                            SizedBox(
+                              height: 260,
+                              child: Obx(() {
+                                return SfCartesianChart(
+                                  primaryXAxis: CategoryAxis(),
+                                  tooltipBehavior: TooltipBehavior(enable: true),
+                                  series: <ColumnSeries<int, String>>[
+                                    ColumnSeries<int, String>(
+                                      width: .45,
+                                      borderRadius: BorderRadius.circular(6),
+                                      color: contentTheme.primary,
+                                      dataSource: [
+                                        controller.readymadeSold.value,
+                                        controller.customSold.value,
+                                        controller.specialSold.value,
+                                      ],
+                                      xValueMapper: (v, i) => ["Readymade", "Custom", "Special"][i],
+                                      yValueMapper: (v, _) => v,
+                                      dataLabelSettings: const DataLabelSettings(isVisible: true),
+                                    )
+                                  ],
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Users by Country
+                    MyFlexItem(
+                      sizes: "lg-6 md-12 sm-12",
+                      child: MyCard(
+                        padding: MySpacing.all(16),
+                        shadow: MyShadow(elevation: .6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("Users by Country", fontWeight: 600),
+                            MySpacing.height(12),
+                            LayoutBuilder(builder: (context, constraints) {
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: 260,
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: Scrollbar(
+                                  thumbVisibility: true,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.vertical,
+                                    child: DataTable(
+                                      headingRowHeight: 36,
+                                      dataRowHeight: 36,
+                                      columns: const [
+                                        DataColumn(label: Text("Country")),
+                                        DataColumn(label: Text("Users")),
+                                      ],
+                                      rows: controller.usersByCountry.entries.map((e) {
+                                        return DataRow(cells: [
+                                          DataCell(MyText.bodySmall(e.key)),
+                                          DataCell(MyText.bodySmall(e.value.toString())),
+                                        ]);
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                MySpacing.height(flexSpacing),
+
+                // ================= USERS LIST + MOST POPULAR PLANS =================
+                MyFlex(
+                  contentPadding: false,
+                  children: [
+                    // Users List
+                    MyFlexItem(
+                      sizes: "lg-8 md-12 sm-12",
+                      child: MyCard(
+                        padding: MySpacing.all(16),
+                        shadow: MyShadow(elevation: .6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("Users List & Membership", fontWeight: 600),
+                            MySpacing.height(12),
+                            LayoutBuilder(builder: (context, constraints) {
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: 400,
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: Scrollbar(
+                                  thumbVisibility: true,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.vertical,
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: DataTable(
+                                        headingRowHeight: 40,
+                                        dataRowHeight: 50,
+                                        columnSpacing: 20,
+                                        columns: const [
+                                          DataColumn(label: Text("Avatar")),
+                                          DataColumn(label: Text("Name")),
+                                          DataColumn(label: Text("Email")),
+                                          DataColumn(label: Text("Membership")),
+                                        ],
+                                        rows: controller.users.map((user) {
+                                          Color membershipColor =
+                                          (user['membership'] ?? 'Free') == 'Paid'
+                                              ? Colors.green
+                                              : Colors.orange;
+
+                                          return DataRow(cells: [
+                                            DataCell(
+                                              MyContainer(
+                                                height: 36,
+                                                width: 36,
+                                                borderRadiusAll: 18,
+                                                color: contentTheme.primary.withOpacity(.2),
+                                                child: Center(
+                                                  child: MyText.bodySmall(
+                                                    (user['name'] ?? '-')[0].toUpperCase(),
+                                                    fontWeight: 700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(MyText.bodySmall(user['name'] ?? '-')),
+                                            DataCell(MyText.bodySmall(user['email'] ?? '-')),
+                                            DataCell(
+                                              MyContainer(
+                                                padding: MySpacing.xy(12, 4),
+                                                borderRadiusAll: 12,
+                                                color: membershipColor.withOpacity(.2),
+                                                child: MyText.bodySmall(
+                                                  user['membership'] ?? '-',
+                                                  color: membershipColor,
+                                                  fontWeight: 600,
+                                                ),
+                                              ),
+                                            ),
+                                          ]);
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Most Popular Plans
+                    MyFlexItem(
+                      sizes: "lg-4 md-12 sm-12",
+                      child: MyCard(
+                        padding: MySpacing.all(16),
+                        shadow: MyShadow(elevation: .6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("Most Popular Plans", fontWeight: 600),
+                            MySpacing.height(12),
+                            LayoutBuilder(builder: (context, constraints) {
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: 400,
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: Scrollbar(
+                                  thumbVisibility: true,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.vertical,
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: DataTable(
+                                        headingRowHeight: 36,
+                                        dataRowHeight: 36,
+                                        columns: const [
+                                          DataColumn(label: Text("Plan")),
+                                          DataColumn(label: Text("Sold")),
+                                        ],
+                                        rows: controller.popularPlans.map((p) {
+                                          return DataRow(cells: [
+                                            DataCell(MyText.bodySmall(p['title'] ?? '-')),
+                                            DataCell(MyText.bodySmall(p['sold'].toString())),
+                                          ]);
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                MySpacing.height(flexSpacing),
+
+                // ================= SUPPORT TICKETS =================
+                MyFlex(
+                  contentPadding: false,
+                  children: [
+                    MyFlexItem(
+                      sizes: "lg-12 md-12 sm-12",
+                      child: MyCard(
+                        padding: MySpacing.all(16),
+                        shadow: MyShadow(elevation: .6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText.titleMedium("Support Tickets", fontWeight: 600),
+                            MySpacing.height(12),
+                            LayoutBuilder(builder: (context, constraints) {
+                              return ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: 400,
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: Scrollbar(
+                                  thumbVisibility: true,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.vertical,
+                                    child: StreamBuilder<QuerySnapshot>(
+                                      stream: controller.firestore
+                                          .collection('support_tickets')
+                                          .limit(15)
+                                          .snapshots(),
+                                      builder: (_, snap) {
+                                        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+
+                                        final tickets = snap.data!.docs
+                                            .map((doc) => doc.data() as Map<String, dynamic>)
+                                            .toList();
+
+                                        return SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: DataTable(
+                                            headingRowHeight: 40,
+                                            dataRowHeight: 50,
+                                            columnSpacing: 20,
+                                            columns: const [
+                                              DataColumn(label: Text("User")),
+                                              DataColumn(label: Text("Topic")),
+                                              DataColumn(label: Text("Status")),
+                                              DataColumn(label: Text("Priority")),
+                                              DataColumn(label: Text("Assigned")),
+                                            ],
+                                            rows: tickets.map((ticket) {
+                                              Color statusColor;
+                                              switch ((ticket['status'] ?? 'In Progress').toLowerCase()) {
+                                                case 'resolved':
+                                                  statusColor = Colors.green;
+                                                  break;
+                                                case 'in progress':
+                                                  statusColor = Colors.orange;
+                                                  break;
+                                                case 'pending':
+                                                  statusColor = Colors.red;
+                                                  break;
+                                                default:
+                                                  statusColor = Colors.grey;
+                                              }
+
+                                              Color priorityColor;
+                                              switch ((ticket['priority'] ?? 'Normal').toLowerCase()) {
+                                                case 'high':
+                                                  priorityColor = Colors.redAccent;
+                                                  break;
+                                                case 'medium':
+                                                  priorityColor = Colors.orangeAccent;
+                                                  break;
+                                                default:
+                                                  priorityColor = Colors.greenAccent;
+                                              }
+
+                                              return DataRow(cells: [
+                                                DataCell(Row(
+                                                  children: [
+                                                    MyContainer(
+                                                      height: 36,
+                                                      width: 36,
+                                                      borderRadiusAll: 18,
+                                                      color: contentTheme.primary.withOpacity(.2),
+                                                      child: Center(
+                                                        child: MyText.bodySmall(
+                                                          (ticket['userName'] ?? '-')[0].toUpperCase(),
+                                                          fontWeight: 700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    MySpacing.width(8),
+                                                    MyText.bodySmall(ticket['userName'] ?? '-', fontWeight: 600),
+                                                  ],
+                                                )),
+                                                DataCell(MyText.bodySmall(ticket['topic'] ?? '-')),
+                                                DataCell(MyContainer(
+                                                  padding: MySpacing.xy(12, 4),
+                                                  borderRadiusAll: 12,
+                                                  color: statusColor.withOpacity(.2),
+                                                  child: MyText.bodySmall(
+                                                    ticket['status'] ?? '-',
+                                                    color: statusColor,
+                                                    fontWeight: 600,
+                                                  ),
+                                                )),
+                                                DataCell(MyContainer(
+                                                  padding: MySpacing.xy(12, 4),
+                                                  borderRadiusAll: 12,
+                                                  color: priorityColor.withOpacity(.2),
+                                                  child: MyText.bodySmall(
+                                                    ticket['priority'] ?? '-',
+                                                    color: priorityColor,
+                                                    fontWeight: 600,
+                                                  ),
+                                                )),
+                                                DataCell(MyText.bodySmall(ticket['assignedTo'] ?? '-')),
+                                              ]);
+                                            }).toList(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                MySpacing.height(flexSpacing),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ================= TOP STATS CARD =================
+  MyFlexItem statCard(String title, RxInt value, IconData icon, Color color) {
+    return MyFlexItem(
+      sizes: "lg-2 md-4 sm-6",
+      child: Obx(() {
+        return MyCard(
+          height: 90,
+          padding: MySpacing.xy(12, 10),
+          shadow: MyShadow(elevation: .4),
+          child: Row(
+            children: [
+              MyContainer(
+                height: 36,
+                width: 36,
+                color: color.withOpacity(.15),
+                borderRadiusAll: 8,
+                child: Icon(icon, size: 18, color: color),
+              ),
+              MySpacing.width(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MyText.titleMedium(value.value.toString(), fontWeight: 600),
+                    MyText.bodySmall(title, muted: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
