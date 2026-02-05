@@ -959,6 +959,9 @@ class DashboardPage extends StatelessWidget {
                   statCard("Free Users", controller.freeUsers, LucideIcons.user_minus, contentTheme.warning),
                   statCard("Resolved", controller.ticketsResolved, LucideIcons.check_check, contentTheme.info),
                   statCard("In Progress", controller.ticketsInProgress, LucideIcons.clock, contentTheme.danger),
+                  statCard("Total Revenue", controller.totalRevenue, LucideIcons.dollar_sign, contentTheme.success),
+                  statCard("Pending Revenue", controller.pendingRevenue, LucideIcons.triangle_alert, contentTheme.danger),
+
                 ],
               ),
               MySpacing.height(gap),
@@ -1129,6 +1132,13 @@ class DashboardPage extends StatelessWidget {
               // ================= SUPPORT TICKETS =================
               supportTicketsTable(contentTheme),
               MySpacing.height(gap),
+
+              transactionReportTable(),
+              MySpacing.height(gap),
+
+              userLedgerReport(),
+              MySpacing.height(gap),
+
             ],
           ),
         );
@@ -1136,8 +1146,143 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
+  Widget transactionReportTable() {
+    return MyCard(
+      padding: MySpacing.all(16),
+      shadow: MyShadow(elevation: .6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.credit_card, size: 18),
+              MySpacing.width(8),
+              MyText.titleMedium("All Transactions", fontWeight: 600),
+            ],
+          ),
+          MySpacing.height(16),
+
+          SizedBox(
+            height: 380,
+            child: Obx(() {
+              if (controller.transactions.isEmpty) {
+                return Center(child: MyText.bodySmall("No transactions found"));
+              }
+
+              return ListView.separated(
+                itemCount: controller.transactions.length,
+                separatorBuilder: (_, __) => Divider(),
+                itemBuilder: (_, i) {
+                  final t = controller.transactions[i];
+
+                  Color color = t['status'] == 'completed'
+                      ? Colors.green
+                      : Colors.orange;
+
+                  return Row(
+                    children: [
+                      Expanded(child: MyText.bodySmall(t['plan'] ?? '-')),
+                      Expanded(child: MyText.bodySmall("\$${t['amount']}")),
+                      Expanded(
+                        child: MyText.bodySmall(
+                          t['status'],
+                          color: color,
+                        ),
+                      ),
+                      Expanded(
+                        child: MyText.bodySmall(
+                          t['date'] != null
+                              ? (t['date'] as Timestamp).toDate().toString()
+                              : "-",
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget userLedgerReport() {
+    return MyCard(
+      padding: MySpacing.all(16),
+      shadow: MyShadow(elevation: .6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.book_open, size: 18),
+              MySpacing.width(8),
+              MyText.titleMedium("User Ledgers", fontWeight: 600),
+            ],
+          ),
+          MySpacing.height(16),
+
+          SizedBox(
+            height: 380,
+            child: Obx(() {
+              if (controller.userLedgers.isEmpty) {
+                return Center(child: MyText.bodySmall("No ledger data"));
+              }
+
+              return ListView.separated(
+                itemCount: controller.userLedgers.length,
+                separatorBuilder: (_, __) => Divider(),
+                itemBuilder: (_, i) {
+                  final l = controller.userLedgers[i];
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MyText.bodyMedium(
+                        "User ID: ${l['userId']}",
+                        fontWeight: 600,
+                      ),
+
+                      MySpacing.height(6),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: MyText.bodySmall(
+                              "Total Paid: \$${l['totalPaid']}",
+                              color: Colors.green,
+                            ),
+                          ),
+                          Expanded(
+                            child: MyText.bodySmall(
+                              "Pending: \$${l['pending']}",
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      MySpacing.height(6),
+
+                      MyText.bodySmall(
+                        "Total Transactions: ${l['plans'].length}",
+                        muted: true,
+                      ),
+                    ],
+                  );
+                },
+              );
+            }),
+          )
+        ],
+      ),
+    );
+  }
+
+
   // ================= STAT CARD =================
-  MyFlexItem statCard(String title, RxInt value, IconData icon, Color color) {
+  MyFlexItem statCard(String title, Rx<num> value, IconData icon, Color color) {
     return MyFlexItem(
       sizes: "lg-2 md-4 sm-6",
       child: Obx(() {
@@ -1159,7 +1304,10 @@ class DashboardPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  MyText.titleMedium(value.value.toString(), fontWeight: 600),
+                  MyText.titleMedium(
+                    value.value.toStringAsFixed(0),
+                    fontWeight: 600,
+                  ),
                   MyText.bodySmall(title, muted: true),
                 ],
               ),
@@ -1604,6 +1752,68 @@ class DashboardPage extends StatelessWidget {
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+  Widget activeMembershipsTable() {
+    return MyCard(
+      padding: MySpacing.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText.titleMedium("Active Memberships"),
+
+          SizedBox(
+            height: 380,
+            child: Obx(() {
+              return ListView.builder(
+                itemCount: controller.activeMemberships.length,
+                itemBuilder: (_, i) {
+                  final m = controller.activeMemberships[i];
+
+                  return Row(
+                    children: [
+                      Expanded(child: MyText.bodySmall(m['userName'])),
+                      Expanded(child: MyText.bodySmall(m['planName'])),
+                      Expanded(child: MyText.bodySmall("\$${m['amount']}")),
+                    ],
+                  );
+                },
+              );
+            }),
+          )
+        ],
+      ),
+    );
+  }
+  Widget pendingPaymentsTable() {
+    return MyCard(
+      padding: MySpacing.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText.titleMedium("Pending Payments"),
+
+          SizedBox(
+            height: 380,
+            child: Obx(() {
+              return ListView.builder(
+                itemCount: controller.pendingPayments.length,
+                itemBuilder: (_, i) {
+                  final p = controller.pendingPayments[i];
+
+                  return Row(
+                    children: [
+                      Expanded(child: MyText.bodySmall(p['userName'])),
+                      Expanded(child: MyText.bodySmall(p['planName'])),
+                      Expanded(child: MyText.bodySmall("\$${p['amount']}")),
+                    ],
+                  );
+                },
+              );
+            }),
+          )
         ],
       ),
     );

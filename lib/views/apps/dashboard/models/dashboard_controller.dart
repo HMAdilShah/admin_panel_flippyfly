@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get/get.dart';
-import 'dashboard_controller.dart';
+
 
 class DashboardBinding extends Bindings {
   @override
@@ -11,6 +10,19 @@ class DashboardBinding extends Bindings {
 }
 
 class DashboardController extends GetxController {
+  // ================= TRANSACTIONS & REVENUE =================
+
+  RxDouble totalRevenue = 0.0.obs;
+  RxDouble pendingRevenue = 0.0.obs;
+  RxList<Map<String, dynamic>> transactions = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> userLedgers = <Map<String, dynamic>>[].obs;
+
+
+  RxMap<String, double> monthlyRevenue = <String, double>{}.obs;
+  RxList<Map<String, dynamic>> activeMemberships = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> pendingPayments = <Map<String, dynamic>>[].obs;
+
+
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   // ================= LOADING =================
@@ -43,14 +55,118 @@ class DashboardController extends GetxController {
   Future<void> loadDashboard() async {
     isLoading.value = true;
 
+    // Run independent tasks in parallel
     await Future.wait([
       fetchUsers(),
       fetchTickets(),
       loadOrCalculatePlanStats(),
+      fetchTransactions(),
     ]);
+
+    // These depend on transactions, so run sequentially
+    await calculateUserLedgers();
+    await generateBusinessReports();
 
     isLoading.value = false;
   }
+
+
+  Future<void> fetchTransactions() async {
+    final snap = await firestore
+        .collection('transactions')
+        .orderBy('date', descending: true)
+        .get();
+
+    double total = 0;
+    double pending = 0;
+
+    List<Map<String, dynamic>> list = [];
+
+    for (var doc in snap.docs) {
+      final d = doc.data();
+
+      double amount = (d['amount'] ?? 0).toDouble();
+      String status = d['status'] ?? 'pending';
+
+      if (status == 'completed') {
+        total += amount;
+      } else {
+        pending += amount;
+      }
+
+      list.add({
+        'id': doc.id,
+        'userId': d['userId'],
+        'userName': d['userName'] ?? '',
+        'email': d['email'] ?? '',
+        'planName': d['plan_name'],
+        'planType': d['type'] ?? 'membership',
+        'amount': amount,
+        'status': status,
+        'paymentMethod': d['payment_method'] ?? 'unknown',
+        'transactionId': d['transaction_id'] ?? '',
+        'date': d['date'],
+        'expiryDate': d['expiry_date'],
+      });
+    }
+
+    transactions.value = list;
+    totalRevenue.value = total;
+    pendingRevenue.value = pending;
+  }
+
+  Future<void> calculateUserLedgers() async {
+    Map<String, Map<String, dynamic>> ledgerMap = {};
+
+    for (var tx in transactions) {
+      String uid = tx['userId'];
+
+      if (!ledgerMap.containsKey(uid)) {
+        ledgerMap[uid] = {
+          'userId': uid,
+          'userName': tx['userName'],
+          'email': tx['email'],
+          'totalPaid': 0.0,
+          'pending': 0.0,
+          'activePlans': [],
+          'expiredPlans': [],
+          'transactions': [],
+        };
+      }
+
+      if (tx['status'] == 'completed') {
+        ledgerMap[uid]!['totalPaid'] += tx['amount'];
+      } else {
+        ledgerMap[uid]!['pending'] += tx['amount'];
+      }
+
+      // Active / Expired Logic
+      if (tx['expiryDate'] != null) {
+        DateTime expiry = (tx['expiryDate'] as Timestamp).toDate();
+
+        if (expiry.isAfter(DateTime.now())) {
+          ledgerMap[uid]!['activePlans'].add(tx);
+        } else {
+          ledgerMap[uid]!['expiredPlans'].add(tx);
+        }
+      }
+
+      ledgerMap[uid]!['transactions'].add(tx);
+    }
+
+    userLedgers.value = ledgerMap.values.toList();
+  }
+
+
+
+
+
+
+
+
+
+
+
 
   // ================= USERS =================
   Future<void> fetchUsers() async {
@@ -170,4 +286,39 @@ class DashboardController extends GetxController {
     specialSold.value = data['specialSold'];
     popularPlans.value = List<Map<String, dynamic>>.from(data['popularPlans']);
   }
+
+
+  Future<void> generateBusinessReports() async {
+    Map<String, double> monthMap = {};
+    List<Map<String, dynamic>> active = [];
+    List<Map<String, dynamic>> pending = [];
+
+    for (var tx in transactions) {
+      // Monthly revenue
+      if (tx['date'] != null) {
+        DateTime d = (tx['date'] as Timestamp).toDate();
+        String key = "${d.year}-${d.month}";
+
+        monthMap[key] = (monthMap[key] ?? 0) + tx['amount'];
+      }
+
+      // Pending payments
+      if (tx['status'] != 'completed') {
+        pending.add(tx);
+      }
+
+      // Active memberships
+      if (tx['expiryDate'] != null) {
+        DateTime exp = (tx['expiryDate'] as Timestamp).toDate();
+        if (exp.isAfter(DateTime.now())) {
+          active.add(tx);
+        }
+      }
+    }
+
+    monthlyRevenue.value = monthMap;
+    pendingPayments.value = pending;
+    activeMemberships.value = active;
+  }
+
 }
