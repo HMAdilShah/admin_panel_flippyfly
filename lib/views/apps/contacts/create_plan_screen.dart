@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
+import 'package:intl/intl.dart';
 import 'package:webkit/helpers/utils/ui_mixins.dart';
 import 'package:webkit/helpers/widgets/my_button.dart';
 import 'package:webkit/helpers/widgets/my_container.dart';
@@ -277,29 +278,62 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
 
 
   Future<void> _savePlan() async {
+    if (isSaving) return; // ✅ prevent double click
+
     if (!_formKey.currentState!.validate()) return;
 
+    if (_fromDateController.text.trim().isEmpty ||
+        _toDateController.text.trim().isEmpty ||
+        _expiryDateController.text.trim().isEmpty) {
+
+      Get.snackbar(
+        "Date Required",
+        "Please select all dates before saving.",
+        backgroundColor: accentPink.withOpacity(0.08),
+        colorText: accentPink,
+      );
+      return;
+    }
+
+
+    final fromDate = DateFormat('yyyy-M-d')
+        .parse(_fromDateController.text.trim());
+
+    final toDate = DateFormat('yyyy-M-d')
+        .parse(_toDateController.text.trim());
+
+    final expiryDate = DateFormat('yyyy-M-d')
+        .parse(_expiryDateController.text.trim());
+
+
     if (planImages.isEmpty) {
-      Get.snackbar("Images Required", "Please upload at least one plan image.",
-          backgroundColor: accentPink.withOpacity(0.08), colorText: accentPink);
+      Get.snackbar(
+        "Images Required",
+        "Please upload at least one plan image.",
+        backgroundColor: accentPink.withOpacity(0.08),
+        colorText: accentPink,
+      );
       return;
     }
 
     setState(() => isSaving = true);
 
     try {
+      final planCode = await _generatePlanCode(); // 🔥 moved here
+
       final planImageUrls = await _uploadImages(planImages, "main");
       final expImageUrls = experienceImages.isNotEmpty
           ? await _uploadImages(experienceImages, "experiences")
           : [];
 
       await FirebaseFirestore.instance.collection("plans").add({
+        "planCode": planCode,
         "title": _titleController.text.trim(),
         "description": _descriptionController.text.trim(),
         "coins": int.tryParse(_coinsController.text.trim()) ?? 0,
-        "fromDate": _fromDateController.text.trim(),
-        "toDate": _toDateController.text.trim(),
-        "expiryDate": _expiryDateController.text.trim(),
+        "fromDate": Timestamp.fromDate(fromDate),
+        "toDate": Timestamp.fromDate(toDate),
+        "expiryDate": Timestamp.fromDate(expiryDate),
         "isFor": selectedMemberType,
         "isSpecialOffer": isSpecialOffer,
         "images": planImageUrls,
@@ -307,6 +341,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
         "experiencesImages": expImageUrls,
         "createdAt": FieldValue.serverTimestamp(),
       });
+
+      if (!mounted) return;
 
       Get.snackbar(
         "✅ Success",
@@ -316,20 +352,49 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> with UIMixin {
         snackPosition: SnackPosition.TOP,
       );
 
-      // small delay for visual feedback
       await Future.delayed(const Duration(milliseconds: 600));
 
-      if (mounted) {
-        // ✅ Pop back to PlansOverview (refreshes automatically)
-        Get.back(result: true);
-      }
+      // Get.back(result: true); // ✅ go back properly
+      Navigator.of(context).pop(true);
+
     } catch (e, st) {
       debugPrint("🔥 Save plan error: $e\n$st");
-      Get.snackbar("Error", e.toString(),
-          backgroundColor: accentPink.withOpacity(0.08), colorText: accentPink);
+
+      if (mounted) {
+        Get.snackbar(
+          "Error",
+          e.toString(),
+          backgroundColor: accentPink.withOpacity(0.08),
+          colorText: accentPink,
+        );
+      }
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
+  }
+
+  Future<String> _generatePlanCode() async {
+    final counterRef =
+    FirebaseFirestore.instance.collection('counters').doc('plans');
+
+    return FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(counterRef);
+
+      if (!snapshot.exists) {
+        transaction.set(counterRef, {'current': 1});
+        return "pl-001";
+      }
+
+      final current = snapshot.get('current') ?? 0;
+      final next = current + 1;
+
+      transaction.update(counterRef, {'current': next});
+
+      // Format with leading zeros
+      final formattedNumber = next.toString().padLeft(3, '0');
+
+      return "pl-$formattedNumber";
+    });
   }
 
 

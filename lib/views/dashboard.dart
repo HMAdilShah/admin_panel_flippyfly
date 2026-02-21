@@ -919,7 +919,7 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contentTheme = AdminTheme.theme.contentTheme;
-    const double gap = 16;
+    const double gap = 12;
 
     return Layout(
       child: Obx(() {
@@ -1129,15 +1129,39 @@ class DashboardPage extends StatelessWidget {
               ),
               MySpacing.height(gap),
 
-              // ================= SUPPORT TICKETS =================
+              // // ================= SUPPORT TICKETS =================
+              // supportTicketsTable(contentTheme),
+              // MySpacing.height(gap),
+              //
+              // transactionReportTable(),
+              // MySpacing.height(gap),
+              //
+              // userLedgerReport(),
+              // MySpacing.height(gap),
+              MySpacing.height(gap),
+
+// ================= TRANSACTIONS + LEDGER (SIDE BY SIDE) =================
+              MyFlex(
+                contentPadding: false,
+                children: [
+                  MyFlexItem(
+                    sizes: "lg-6 md-12 sm-12",
+                    child: transactionReportTable(),
+                  ),
+                  MyFlexItem(
+                    sizes: "lg-6 md-12 sm-12",
+                    child: userLedgerReport(),
+                  ),
+                ],
+              ),
+
+              MySpacing.height(gap),
+
+// ================= SUPPORT TICKETS =================
               supportTicketsTable(contentTheme),
+
               MySpacing.height(gap),
 
-              transactionReportTable(),
-              MySpacing.height(gap),
-
-              userLedgerReport(),
-              MySpacing.height(gap),
 
             ],
           ),
@@ -1146,7 +1170,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget transactionReportTable() {
+/*  Widget transactionReportTable() {
     return MyCard(
       padding: MySpacing.all(16),
       shadow: MyShadow(elevation: .6),
@@ -1157,7 +1181,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               Icon(LucideIcons.credit_card, size: 18),
               MySpacing.width(8),
-              MyText.titleMedium("All Transactions", fontWeight: 600),
+              MyText.titleMedium("All Transactions (Grouped)", fontWeight: 600),
             ],
           ),
           MySpacing.height(16),
@@ -1165,35 +1189,66 @@ class DashboardPage extends StatelessWidget {
           SizedBox(
             height: 380,
             child: Obx(() {
-              if (controller.transactions.isEmpty) {
-                return Center(child: MyText.bodySmall("No transactions found"));
+              if (controller.cachedTransactions.isEmpty) {
+                return Center(
+                  child: MyText.bodySmall("No transactions found"),
+                );
               }
 
+              // 🔹 GROUP BY USER
+              Map<String, Map<String, dynamic>> grouped = {};
+
+              for (var tx in controller.cachedTransactions) {
+                final uid = tx['userId'] ?? '';
+
+                grouped.putIfAbsent(uid, () => {
+                  'userName': tx['userName'] ?? 'Unknown',
+                  'completed': 0.0,
+                  'pending': 0.0,
+                });
+
+                if (tx['status'] == 'completed') {
+                  grouped[uid]!['completed'] += tx['amount'];
+                } else {
+                  grouped[uid]!['pending'] += tx['amount'];
+                }
+              }
+
+              final list = grouped.values.toList();
+
               return ListView.separated(
-                itemCount: controller.transactions.length,
+                itemCount: list.length,
                 separatorBuilder: (_, __) => Divider(),
                 itemBuilder: (_, i) {
-                  final t = controller.transactions[i];
-
-                  Color color = t['status'] == 'completed'
-                      ? Colors.green
-                      : Colors.orange;
+                  final u = list[i];
 
                   return Row(
                     children: [
-                      Expanded(child: MyText.bodySmall(t['plan'] ?? '-')),
-                      Expanded(child: MyText.bodySmall("\$${t['amount']}")),
                       Expanded(
-                        child: MyText.bodySmall(
-                          t['status'],
-                          color: color,
+                        flex: 3,
+                        child: MyText.bodyMedium(
+                          u['userName'],
+                          fontWeight: 600,
                         ),
                       ),
+
+                      // Completed
                       Expanded(
+                        flex: 2,
                         child: MyText.bodySmall(
-                          t['date'] != null
-                              ? (t['date'] as Timestamp).toDate().toString()
-                              : "-",
+                          "Received: \$${u['completed'].toStringAsFixed(2)}",
+                          color: Colors.green,
+                          fontWeight: 600,
+                        ),
+                      ),
+
+                      // Pending
+                      Expanded(
+                        flex: 2,
+                        child: MyText.bodySmall(
+                          "Pending: \$${u['pending'].toStringAsFixed(2)}",
+                          color: Colors.orange,
+                          fontWeight: 600,
                         ),
                       ),
                     ],
@@ -1205,9 +1260,216 @@ class DashboardPage extends StatelessWidget {
         ],
       ),
     );
+  }*/
+  Widget transactionReportTable() {
+    return MyCard(
+      padding: MySpacing.all(16),
+      shadow: MyShadow(elevation: .6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.credit_card, size: 18),
+              MySpacing.width(8),
+              MyText.titleMedium(
+                "All Transactions (Grouped)",
+                fontWeight: 600,
+              ),
+            ],
+          ),
+          MySpacing.height(16),
+
+          /*SizedBox(
+            height: 420,
+            child: Obx(() {
+              if (controller.cachedTransactions.isEmpty) {
+                return Center(
+                  child: MyText.bodySmall("No transactions found"),
+                );
+              }
+
+              // 🔹 GROUP BY USER
+              Map<String, Map<String, dynamic>> grouped = {};
+
+              for (var tx in controller.cachedTransactions) {
+                final uid = tx['userId'] ?? '';
+
+                grouped.putIfAbsent(uid, () => {
+                  'userName': tx['userName'] ?? 'Unknown',
+                  'completed': 0.0,
+                  'pending': 0.0,
+                  'transactions': <Map<String, dynamic>>[],
+                });
+
+                grouped[uid]!['transactions'].add(tx);
+
+                if (tx['status'] == 'completed') {
+                  grouped[uid]!['completed'] += tx['amount'];
+                } else {
+                  grouped[uid]!['pending'] += tx['amount'];
+                }
+              }
+
+              final list = grouped.values.toList();
+
+              return ListView.builder(
+                itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final u = list[i];
+
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 10),
+                    child: ExpansionTile(
+                      tilePadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+
+                      title: MyText.bodyMedium(
+                        u['userName'],
+                        fontWeight: 600,
+                      ),
+
+                      subtitle: Row(
+                        children: [
+                          MyText.bodySmall(
+                            "Received: \$${u['completed'].toStringAsFixed(2)}",
+                            color: Colors.green,
+                            fontWeight: 600,
+                          ),
+                          MySpacing.width(16),
+                          MyText.bodySmall(
+                            "Pending: \$${u['pending'].toStringAsFixed(2)}",
+                            color: Colors.orange,
+                            fontWeight: 600,
+                          ),
+                        ],
+                      ),
+
+                      children: (u['transactions']
+                      as List<Map<String, dynamic>>)
+                          .map((tx) {
+                        return ListTile(
+                          dense: true,
+                          title: MyText.bodySmall(
+                            tx['planName'] ?? 'N/A',
+                            fontWeight: 600,
+                          ),
+                          subtitle: MyText.bodySmall(
+                            "Status: ${tx['status']}",
+                          ),
+                          trailing: MyText.bodySmall(
+                            "\$${tx['amount'].toStringAsFixed(2)}",
+                            color: tx['status'] == 'completed'
+                                ? Colors.green
+                                : Colors.orange,
+                            fontWeight: 600,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),*/
+
+          SizedBox(
+            height: 420,
+            child: Obx(() {
+              if (controller.cachedTransactions.isEmpty) {
+                return Center(
+                  child: MyText.bodySmall("No transactions found"),
+                );
+              }
+            
+              Map<String, Map<String, dynamic>> grouped = {};
+            
+              for (var tx in controller.cachedTransactions) {
+                final uid = tx['userId'] ?? '';
+            
+                grouped.putIfAbsent(uid, () => {
+                  'userName': tx['userName'] ?? 'Unknown',
+                  'completed': 0.0,
+                  'pending': 0.0,
+                  'transactions': <Map<String, dynamic>>[],
+                });
+            
+                grouped[uid]!['transactions'].add(tx);
+            
+                if (tx['status'] == 'completed') {
+                  grouped[uid]!['completed'] += tx['amount'];
+                } else {
+                  grouped[uid]!['pending'] += tx['amount'];
+                }
+              }
+            
+              final list = grouped.values.toList();
+            
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final u = list[i];
+            
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ExpansionTile(
+                      tilePadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      title: MyText.bodyMedium(
+                        u['userName'],
+                        fontWeight: 600,
+                      ),
+                      subtitle: Row(
+                        children: [
+                          MyText.bodySmall(
+                            "Received: \$${u['completed'].toStringAsFixed(2)}",
+                            color: Colors.green,
+                            fontWeight: 600,
+                          ),
+                          MySpacing.width(16),
+                          MyText.bodySmall(
+                            "Pending: \$${u['pending'].toStringAsFixed(2)}",
+                            color: Colors.orange,
+                            fontWeight: 600,
+                          ),
+                        ],
+                      ),
+                      children: (u['transactions'] as List<Map<String, dynamic>>)
+                          .map((tx) {
+                        return ListTile(
+                          dense: true,
+                          title: MyText.bodySmall(
+                            tx['planName'] ?? 'N/A',
+                            fontWeight: 600,
+                          ),
+                          subtitle: MyText.bodySmall(
+                            "Status: ${tx['status']}",
+                          ),
+                          trailing: MyText.bodySmall(
+                            "\$${tx['amount'].toStringAsFixed(2)}",
+                            color: tx['status'] == 'completed'
+                                ? Colors.green
+                                : Colors.orange,
+                            fontWeight: 600,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                },
+              );
+            }),
+          )
+
+        ],
+      ),
+    );
   }
 
-  Widget userLedgerReport() {
+
+/*  Widget userLedgerReport() {
     return MyCard(
       padding: MySpacing.all(16),
       shadow: MyShadow(elevation: .6),
@@ -1226,22 +1488,30 @@ class DashboardPage extends StatelessWidget {
           SizedBox(
             height: 380,
             child: Obx(() {
-              if (controller.userLedgers.isEmpty) {
+              if (controller.cachedUserLedgers.isEmpty) {
                 return Center(child: MyText.bodySmall("No ledger data"));
               }
-
               return ListView.separated(
-                itemCount: controller.userLedgers.length,
+                itemCount: controller.cachedUserLedgers.length,
                 separatorBuilder: (_, __) => Divider(),
                 itemBuilder: (_, i) {
-                  final l = controller.userLedgers[i];
+                  final l = controller.cachedUserLedgers[i];
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      MyText.bodyMedium(
-                        "User ID: ${l['userId']}",
-                        fontWeight: 600,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MyText.bodyMedium(
+                            l['userName'] ?? 'Unknown',
+                            fontWeight: 600,
+                          ),
+                          MyText.bodySmall(
+                            l['email'] ?? '',
+                            muted: true,
+                          ),
+                        ],
                       ),
 
                       MySpacing.height(6),
@@ -1266,7 +1536,9 @@ class DashboardPage extends StatelessWidget {
                       MySpacing.height(6),
 
                       MyText.bodySmall(
-                        "Total Transactions: ${l['plans'].length}",
+                        // "Total Transactions: ${l['plans'].length}",
+                        "Total Transactions: ${(l['transactions'] as List?)?.length ?? 0}",
+
                         muted: true,
                       ),
                     ],
@@ -1278,38 +1550,136 @@ class DashboardPage extends StatelessWidget {
         ],
       ),
     );
+  }*/
+
+  Widget userLedgerReport() {
+    return MyCard(
+      padding: MySpacing.all(16),
+      shadow: MyShadow(elevation: .6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.book_open, size: 18),
+              MySpacing.width(8),
+              MyText.titleMedium("User Ledgers", fontWeight: 600),
+            ],
+          ),
+          MySpacing.height(16),
+
+          SizedBox(
+            height: 420,
+            child: Obx(() {
+              if (controller.cachedUserLedgers.isEmpty) {
+                return Center(child: MyText.bodySmall("No ledger data"));
+              }
+            
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: controller.cachedUserLedgers.length,
+                itemBuilder: (_, i) {
+                  final l = controller.cachedUserLedgers[i];
+            
+                  return Card(
+                    margin: EdgeInsets.only(bottom: 12),
+                    child: ExpansionTile(
+                      tilePadding: EdgeInsets.symmetric(horizontal: 16),
+                      title: MyText.bodyMedium(
+                        l['userName'] ?? 'Unknown',
+                        fontWeight: 600,
+                      ),
+                      subtitle: MyText.bodySmall(
+                        l['email'] ?? '',
+                        muted: true,
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          MyText.bodySmall(
+                            "Paid: \$${(l['totalPaid'] ?? 0).toStringAsFixed(2)}",
+                            color: Colors.green,
+                            fontWeight: 600,
+                          ),
+                          MyText.bodySmall(
+                            "Pending: \$${(l['pending'] ?? 0).toStringAsFixed(2)}",
+                            color: Colors.orange,
+                            fontWeight: 600,
+                          ),
+                        ],
+                      ),
+                      children: (l['transactions'] as List<dynamic>)
+                          .map((tx) {
+                        return ListTile(
+                          dense: true,
+                          title: MyText.bodySmall(
+                            tx['planName'] ?? 'N/A',
+                            fontWeight: 600,
+                          ),
+                          subtitle: MyText.bodySmall(
+                            "Status: ${tx['status']}",
+                          ),
+                          trailing: MyText.bodySmall(
+                            "\$${(tx['amount'] ?? 0).toStringAsFixed(2)}",
+                            color: tx['status'] == 'completed'
+                                ? Colors.green
+                                : Colors.orange,
+                            fontWeight: 600,
+                          ),
+                        );
+                      })
+                          .toList(),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
   }
 
-
   // ================= STAT CARD =================
+// ================= STAT CARD (Optimized for single row) =================
   MyFlexItem statCard(String title, Rx<num> value, IconData icon, Color color) {
     return MyFlexItem(
-      sizes: "lg-2 md-4 sm-6",
+      sizes: "lg-1.7 md-3 sm-6",
       child: Obx(() {
         return MyCard(
-          height: 90,
-          padding: MySpacing.xy(12, 10),
+          height: 80,
+          padding: MySpacing.xy(8, 8),
           shadow: MyShadow(elevation: .4),
           child: Row(
             children: [
               MyContainer(
-                height: 36,
-                width: 36,
+                height: 32,
+                width: 32,
                 color: color.withOpacity(.15),
-                borderRadiusAll: 8,
-                child: Icon(icon, size: 18, color: color),
+                borderRadiusAll: 6,
+                child: Icon(icon, size: 16, color: color),
               ),
-              MySpacing.width(12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MyText.titleMedium(
-                    value.value.toStringAsFixed(0),
-                    fontWeight: 600,
-                  ),
-                  MyText.bodySmall(title, muted: true),
-                ],
+              MySpacing.width(8),
+
+              // ✅ Wrap the Column in Flexible
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MyText.titleMedium(
+                      value.value.toStringAsFixed(0),
+                      fontWeight: 400,
+                    ),
+                    MyText.bodySmall(
+                      title,
+                      muted: true,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1320,7 +1690,7 @@ class DashboardPage extends StatelessWidget {
 
 // ================= USERS & MEMBERSHIP (FIXED HEIGHT + IMPROVED UI) =================
   Widget usersTable(ContentTheme contentTheme) {
-    const double tableHeight = 380; // same as popularPlansTable
+    const double tableHeight = 320; // same as popularPlansTable
 
     return MyCard(
       padding: MySpacing.all(16),
@@ -1621,7 +1991,7 @@ class DashboardPage extends StatelessWidget {
           ),
           MySpacing.height(16),
 
-          SizedBox(
+          /*SizedBox(
             height: 360, // Same height as users/popularPlans tables
             child: StreamBuilder<QuerySnapshot>(
               stream: controller.firestore
@@ -1751,7 +2121,114 @@ class DashboardPage extends StatelessWidget {
                 );
               },
             ),
-          ),
+          ),*/
+          StreamBuilder<QuerySnapshot>(
+            stream: controller.firestore
+                .collection('support_tickets')
+                .limit(15)
+                .snapshots(),
+            builder: (_, snap) {
+              if (!snap.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final tickets = snap.data!.docs
+                  .map((d) => d.data() as Map<String, dynamic>)
+                  .toList();
+
+              if (tickets.isEmpty) {
+                return Center(
+                  child: MyText.bodySmall("No tickets found", muted: true),
+                );
+              }
+
+              return SizedBox(
+                height: 380,
+                child: ListView.separated(
+                  // shrinkWrap: true,
+                  // physics: const NeverScrollableScrollPhysics(),
+                  itemCount: tickets.length,
+                  separatorBuilder: (_, __) => MySpacing.height(14),
+                  itemBuilder: (context, index) {
+                    final t = tickets[index];
+                
+                    Color statusColor;
+                    switch ((t['status'] ?? '').toLowerCase()) {
+                      case 'resolved':
+                        statusColor = Colors.green;
+                        break;
+                      case 'in progress':
+                        statusColor = Colors.orange;
+                        break;
+                      case 'pending':
+                        statusColor = Colors.red;
+                        break;
+                      default:
+                        statusColor = Colors.grey;
+                    }
+                
+                    Color priorityColor;
+                    switch ((t['priority'] ?? '').toLowerCase()) {
+                      case 'high':
+                        priorityColor = Colors.redAccent;
+                        break;
+                      case 'medium':
+                        priorityColor = Colors.orangeAccent;
+                        break;
+                      default:
+                        priorityColor = Colors.greenAccent;
+                    }
+                
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: MyText.bodyMedium(
+                            t['userName'] ?? '-',
+                            fontWeight: 600,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: MyText.bodySmall(
+                            t['topic'] ?? '-',
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: MyContainer(
+                            padding: MySpacing.xy(12, 6),
+                            borderRadiusAll: 12,
+                            color: statusColor.withOpacity(.2),
+                            child: MyText.bodySmall(
+                              t['status'] ?? '-',
+                              color: statusColor,
+                              fontWeight: 600,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: MyContainer(
+                            padding: MySpacing.xy(12, 6),
+                            borderRadiusAll: 12,
+                            color: priorityColor.withOpacity(.2),
+                            child: MyText.bodySmall(
+                              t['priority'] ?? '-',
+                              color: priorityColor,
+                              fontWeight: 600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              );
+            },
+          )
+
         ],
       ),
     );
@@ -1764,7 +2241,7 @@ class DashboardPage extends StatelessWidget {
         children: [
           MyText.titleMedium("Active Memberships"),
 
-          SizedBox(
+          /*SizedBox(
             height: 380,
             child: Obx(() {
               return ListView.builder(
@@ -1782,7 +2259,35 @@ class DashboardPage extends StatelessWidget {
                 },
               );
             }),
-          )
+          )*/
+          Obx(() {
+            if (controller.activeMemberships.isEmpty) {
+              return Center(
+                child: MyText.bodySmall("No active memberships"),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.activeMemberships.length,
+              itemBuilder: (_, i) {
+                final m = controller.activeMemberships[i];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(child: MyText.bodySmall(m['userName'] ?? '-')),
+                      Expanded(child: MyText.bodySmall(m['planName'] ?? '-')),
+                      Expanded(child: MyText.bodySmall("\$${m['amount'] ?? 0}")),
+                    ],
+                  ),
+                );
+              },
+            );
+          })
+
         ],
       ),
     );
@@ -1799,6 +2304,8 @@ class DashboardPage extends StatelessWidget {
             height: 380,
             child: Obx(() {
               return ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
                 itemCount: controller.pendingPayments.length,
                 itemBuilder: (_, i) {
                   final p = controller.pendingPayments[i];

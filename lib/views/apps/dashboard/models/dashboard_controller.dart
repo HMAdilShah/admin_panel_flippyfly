@@ -11,6 +11,8 @@ class DashboardBinding extends Bindings {
 
 class DashboardController extends GetxController {
   // ================= TRANSACTIONS & REVENUE =================
+  RxList<Map<String, dynamic>> cachedTransactions = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> cachedUserLedgers = <Map<String, dynamic>>[].obs;
 
   RxDouble totalRevenue = 0.0.obs;
   RxDouble pendingRevenue = 0.0.obs;
@@ -67,9 +69,196 @@ class DashboardController extends GetxController {
     await calculateUserLedgers();
     await generateBusinessReports();
 
+    await loadFinancialReports();
+
     isLoading.value = false;
   }
 
+  Future<void> loadFinancialReports() async {
+    final metaDoc =
+    firestore.collection('dashboard_financial_meta').doc('financial_cache');
+
+    final snap = await metaDoc.get();
+
+    bool shouldRecalculate = true;
+
+    if (snap.exists) {
+      final last = (snap['lastCalculatedAt'] as Timestamp).toDate();
+      if (DateTime.now().difference(last).inHours < 12) {
+        shouldRecalculate = false;
+      }
+    }
+
+    if (shouldRecalculate) {
+      await recalculateFinancialReports(metaDoc);
+    } else {
+      await loadCachedReports();
+    }
+  }
+
+  Future<void> loadCachedReports() async {
+    final txSnap =
+    await firestore.collection('dashboard_transactions').get();
+
+    final ledgerSnap =
+    await firestore.collection('dashboard_user_ledgers').get();
+
+    cachedTransactions.value =
+        txSnap.docs.map((d) => d.data()).toList();
+
+    cachedUserLedgers.value =
+        ledgerSnap.docs.map((d) => d.data()).toList();
+  }
+  Future<void> recalculateFinancialReports(DocumentReference metaDoc) async {
+    List<Map<String, dynamic>> allTransactions = [];
+    Map<String, Map<String, dynamic>> ledgerMap = {};
+
+    // ================= MEMBERSHIP =================
+    final usersSnap = await firestore.collection('users').get();
+    Map<String, Map<String, dynamic>> userMap = {
+      for (var u in usersSnap.docs) u.id: u.data()
+    };
+    for (var doc in usersSnap.docs) {
+      final u = doc.data();
+
+      if (u['plan_name'] == 'Premium') {
+        final tx = {
+          'userId': doc.id,
+          'userName': u['name'],
+          'email': u['email'],
+          'planType': 'membership',
+          'planName': 'Premium',
+          'amount': 5.0,
+          'status': 'completed',
+          'date': u['plan_start_date'],
+          'expiryDate': u['plan_renewal_date'],
+        };
+
+        allTransactions.add(tx);
+      }
+    }
+
+    // ================= READYMADE =================
+    final readymadeSnap =
+    await firestore.collection('users_readymate_plan').get();
+
+    for (var doc in readymadeSnap.docs) {
+      final d = doc.data();
+
+      final tx = {
+        'userId': d['user_id'],
+        'userName': userMap[d['user_id']]?['name'] ?? 'Unknown',
+        'email': d['user_email'],
+        'planType': 'readymade',
+        'planName': d['title'],
+        'amount': (d['total_flipis'] ?? 0).toDouble(),
+        'status': 'completed',
+        'date': d['created_at'],
+        'expiryDate': d['expiryDate'],
+      };
+
+      allTransactions.add(tx);
+    }
+
+    // ================= CUSTOM PLANS =================
+    final customSnap =
+    await firestore.collection('users_plan').get();
+
+    for (var doc in customSnap.docs) {
+      final d = doc.data();
+
+      double paid =
+          double.tryParse(d['paid_flipis_amount'].toString()) ?? 0;
+
+      double remaining =
+      (d['remaining_flipis_amount'] ?? 0).toDouble();
+
+      if (paid > 0) {
+        allTransactions.add({
+          'userId': d['user_id'],
+          'userName': userMap[d['user_id']]?['name'] ?? 'Unknown',
+          'email': d['user_email'],
+          'planType': 'custom',
+          'planName': d['plan_id'],
+          'amount': paid,
+          'status': 'completed',
+          'date': d['created_at'],
+          'expiryDate': null,
+        });
+      }
+
+      if (remaining > 0) {
+        allTransactions.add({
+          'userId': d['user_id'],
+          'userName': userMap[d['user_id']]?['name'] ?? 'Unknown',
+          'email': d['user_email'],
+          'planType': 'custom',
+          'planName': d['plan_id'],
+          'amount': remaining,
+          'status': 'pending',
+          'date': d['created_at'],
+          'expiryDate': null,
+        });
+      }
+    }
+
+    // ================= BUILD LEDGER =================
+    for (var tx in allTransactions) {
+      final uid = tx['userId'];
+
+      ledgerMap.putIfAbsent(uid, () => {
+        'userId': uid,
+        'userName': tx['userName'] ?? 'Unknown',
+        'email': tx['email'],
+        'totalPaid': 0.0,
+        'pending': 0.0,
+        'transactions': [],
+      });
+
+      if (tx['status'] == 'completed') {
+        ledgerMap[uid]!['totalPaid'] += tx['amount'];
+      } else {
+        ledgerMap[uid]!['pending'] += tx['amount'];
+      }
+
+      ledgerMap[uid]!['transactions'].add(tx);
+    }
+
+    // ================= SAVE TO CACHE =================
+    final batch = firestore.batch();
+
+    // Clear old
+    final oldTx = await firestore.collection('dashboard_transactions').get();
+    for (var d in oldTx.docs) {
+      batch.delete(d.reference);
+    }
+
+    final oldLedger =
+    await firestore.collection('dashboard_user_ledgers').get();
+    for (var d in oldLedger.docs) {
+      batch.delete(d.reference);
+    }
+
+    for (var tx in allTransactions) {
+      batch.set(
+          firestore.collection('dashboard_transactions').doc(), tx);
+    }
+
+    for (var l in ledgerMap.values) {
+      batch.set(
+          firestore.collection('dashboard_user_ledgers').doc(l['userId']),
+          l);
+    }
+
+    batch.set(metaDoc, {
+      'lastCalculatedAt': Timestamp.now(),
+    });
+
+    await batch.commit();
+
+    cachedTransactions.value = allTransactions;
+    cachedUserLedgers.value = ledgerMap.values.toList();
+  }
 
   Future<void> fetchTransactions() async {
     final snap = await firestore
@@ -97,7 +286,9 @@ class DashboardController extends GetxController {
       list.add({
         'id': doc.id,
         'userId': d['userId'],
-        'userName': d['userName'] ?? '',
+        // 'userName': d['userName'] ?? '',
+        'userName': d['userName'] ?? d['name'] ?? 'Unknown',
+
         'email': d['email'] ?? '',
         'planName': d['plan_name'],
         'planType': d['type'] ?? 'membership',
@@ -119,29 +310,33 @@ class DashboardController extends GetxController {
     Map<String, Map<String, dynamic>> ledgerMap = {};
 
     for (var tx in transactions) {
-      String uid = tx['userId'];
+      String uid = tx['userId'] ?? '';
 
-      if (!ledgerMap.containsKey(uid)) {
-        ledgerMap[uid] = {
-          'userId': uid,
-          'userName': tx['userName'],
-          'email': tx['email'],
-          'totalPaid': 0.0,
-          'pending': 0.0,
-          'activePlans': [],
-          'expiredPlans': [],
-          'transactions': [],
-        };
-      }
+      if (uid.isEmpty) continue;
 
-      if (tx['status'] == 'completed') {
-        ledgerMap[uid]!['totalPaid'] += tx['amount'];
+      ledgerMap.putIfAbsent(uid, () => {
+        'userId': uid,
+        'userName': tx['userName'] ?? 'Unknown',
+
+        'email': tx['email'] ?? '',
+        'totalPaid': 0.0,
+        'pending': 0.0,
+        'activePlans': <Map<String, dynamic>>[],
+        'expiredPlans': <Map<String, dynamic>>[],
+        'transactions': <Map<String, dynamic>>[],
+      });
+
+      double amount = (tx['amount'] ?? 0).toDouble();
+      String status = tx['status'] ?? 'pending';
+
+      if (status == 'completed') {
+        ledgerMap[uid]!['totalPaid'] += amount;
       } else {
-        ledgerMap[uid]!['pending'] += tx['amount'];
+        ledgerMap[uid]!['pending'] += amount;
       }
 
-      // Active / Expired Logic
-      if (tx['expiryDate'] != null) {
+      // Expiry Handling
+      if (tx['expiryDate'] != null && tx['expiryDate'] is Timestamp) {
         DateTime expiry = (tx['expiryDate'] as Timestamp).toDate();
 
         if (expiry.isAfter(DateTime.now())) {
@@ -154,18 +349,15 @@ class DashboardController extends GetxController {
       ledgerMap[uid]!['transactions'].add(tx);
     }
 
-    userLedgers.value = ledgerMap.values.toList();
+    userLedgers.value = ledgerMap.values.map((e) {
+      return {
+        ...e,
+        'transactions': e['transactions'] ?? [],
+        'activePlans': e['activePlans'] ?? [],
+        'expiredPlans': e['expiredPlans'] ?? [],
+      };
+    }).toList();
   }
-
-
-
-
-
-
-
-
-
-
 
 
   // ================= USERS =================

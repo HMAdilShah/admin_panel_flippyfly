@@ -156,12 +156,20 @@ class _LeftBarState extends State<LeftBar> with SingleTickerProviderStateMixin, 
                     isCondensed: isCondensed,
                     route: '/contacts/membership_management',
                   ),
-                  NavigationItem(
+                  /*NavigationItem(
                     iconData: LucideIcons.receipt,
                     title: "Reports",
                     isCondensed: isCondensed,
                     route: '/crm/opportunities',
+                  ),*/
+                  NavigationItem(
+                    iconData: LucideIcons.bell,
+                    title: "Notifications",
+                    isCondensed: isCondensed,
+                    route: '/contacts/push_notification_screen',
                   ),
+
+
                   // NavigationItem(iconData: LucideIcons.forklift, title: "Logistic".tr(), isCondensed: isCondensed, route: '/dashboard/logistic'),
                   // labelWidget("apps".tr()),
                   //

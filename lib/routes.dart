@@ -13,6 +13,7 @@ import 'package:webkit/views/apps/contacts/membership_management.dart';
 import 'package:webkit/views/apps/contacts/plans_overview.dart';
 import 'package:webkit/views/apps/contacts/post.dart';
 import 'package:webkit/views/apps/contacts/profile.dart';
+import 'package:webkit/views/apps/contacts/push_notification_screen.dart';
 import 'package:webkit/views/apps/contacts/support_tickets_screen.dart';
 import 'package:webkit/views/apps/ecommerce/add_product.dart';
 import 'package:webkit/views/apps/ecommerce/customers.dart';
@@ -206,6 +207,11 @@ getPageRoute() {
         name: '/contacts/banner_management',
         page: () => BannerManagement(),
         middlewares: [AuthMiddleware()]),
+    GetPage(
+        name: '/contacts/push_notification_screen',
+        page: () => PushNotificationAdminScreen(),
+        middlewares: [AuthMiddleware()]),
+
     GetPage(
         name: '/contacts/how_it_works',
         page: () => HowItWorks(),

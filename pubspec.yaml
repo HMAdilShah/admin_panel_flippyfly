@@ -76,6 +76,7 @@ dependencies:
   flutter_stripe: ^11.5.0
   image:
   lucide_icons:
+  http:
 
 
 dev_dependencies:

@@ -341,7 +341,9 @@ class _PlanEditScreenState extends State<PlanEditScreen> with UIMixin {
       await _db.collection('plans').doc(widget.planId).update(payload);
 
       Get.snackbar("Success", "Plan updated successfully", backgroundColor: Colors.green.withOpacity(0.12), colorText: Colors.green);
-      Get.back(result: true);
+      // Get.back(result: true);
+      Navigator.of(context).pop(true);
+
     } catch (e, st) {
       debugPrint("Save plan error: $e\n$st");
       Get.snackbar("Error", e.toString(), backgroundColor: Colors.red.withOpacity(0.12), colorText: Colors.red);

@@ -57,33 +57,33 @@ class _TopBarState extends State<TopBar>
                     color: topBarTheme.onBackground,
                   )),
               MySpacing.width(24),
-              SizedBox(
-                width: 200,
-                child: TextFormField(
-                  maxLines: 1,
-                  style: MyTextStyle.bodyMedium(),
-                  decoration: InputDecoration(
-                      hintText: "search",
-                      hintStyle: MyTextStyle.bodySmall(xMuted: true),
-                      border: outlineInputBorder,
-                      enabledBorder: outlineInputBorder,
-                      focusedBorder: focusedInputBorder,
-                      prefixIcon: const Align(
-                          alignment: Alignment.center,
-                          child: Icon(
-                            FeatherIcons.search,
-                            size: 14,
-                          )),
-                      prefixIconConstraints: const BoxConstraints(
-                          minWidth: 36,
-                          maxWidth: 36,
-                          minHeight: 32,
-                          maxHeight: 32),
-                      contentPadding: MySpacing.xy(16, 12),
-                      isCollapsed: true,
-                      floatingLabelBehavior: FloatingLabelBehavior.never),
-                ),
-              ),
+              // SizedBox(
+              //   width: 200,
+              //   child: TextFormField(
+              //     maxLines: 1,
+              //     style: MyTextStyle.bodyMedium(),
+              //     decoration: InputDecoration(
+              //         hintText: "search",
+              //         hintStyle: MyTextStyle.bodySmall(xMuted: true),
+              //         border: outlineInputBorder,
+              //         enabledBorder: outlineInputBorder,
+              //         focusedBorder: focusedInputBorder,
+              //         prefixIcon: const Align(
+              //             alignment: Alignment.center,
+              //             child: Icon(
+              //               FeatherIcons.search,
+              //               size: 14,
+              //             )),
+              //         prefixIconConstraints: const BoxConstraints(
+              //             minWidth: 36,
+              //             maxWidth: 36,
+              //             minHeight: 32,
+              //             maxHeight: 32),
+              //         contentPadding: MySpacing.xy(16, 12),
+              //         isCollapsed: true,
+              //         floatingLabelBehavior: FloatingLabelBehavior.never),
+              //   ),
+              // ),
             ],
           ),
           Expanded(
@@ -106,44 +106,44 @@ class _TopBarState extends State<TopBar>
                   ),
                 ),
                 MySpacing.width(12),
-                CustomPopupMenu(
-                  backdrop: true,
-                  hideFn: (_) => languageHideFn = _,
-                  onChange: (_) {},
-                  offsetX: -36,
-                  menu: Padding(
-                    padding: MySpacing.xy(8, 8),
-                    child: Center(
-                      child: ClipRRect(
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                        borderRadius: BorderRadius.circular(2),
-                        child: Image.asset(
-                          "assets/lang/${ThemeCustomizer.instance.currentLanguage.locale.languageCode}.jpg",
-                          width: 24,
-                          height: 18,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                  menuBuilder: (_) => buildLanguageSelector(),
-                ),
+                // CustomPopupMenu(
+                //   backdrop: true,
+                //   hideFn: (_) => languageHideFn = _,
+                //   onChange: (_) {},
+                //   offsetX: -36,
+                //   menu: Padding(
+                //     padding: MySpacing.xy(8, 8),
+                //     child: Center(
+                //       child: ClipRRect(
+                //         clipBehavior: Clip.antiAliasWithSaveLayer,
+                //         borderRadius: BorderRadius.circular(2),
+                //         child: Image.asset(
+                //           "assets/lang/${ThemeCustomizer.instance.currentLanguage.locale.languageCode}.jpg",
+                //           width: 24,
+                //           height: 18,
+                //           fit: BoxFit.cover,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                //   menuBuilder: (_) => buildLanguageSelector(),
+                // ),
                 MySpacing.width(6),
-                CustomPopupMenu(
-                  backdrop: true,
-                  onChange: (_) {},
-                  offsetX: -120,
-                  menu: Padding(
-                    padding: MySpacing.xy(8, 8),
-                    child: const Center(
-                      child: Icon(
-                        FeatherIcons.bell,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                  menuBuilder: (_) => buildNotifications(),
-                ),
+                // CustomPopupMenu(
+                //   backdrop: true,
+                //   onChange: (_) {},
+                //   offsetX: -120,
+                //   menu: Padding(
+                //     padding: MySpacing.xy(8, 8),
+                //     child: const Center(
+                //       child: Icon(
+                //         FeatherIcons.bell,
+                //         size: 18,
+                //       ),
+                //     ),
+                //   ),
+                //   menuBuilder: (_) => buildNotifications(),
+                // ),
                 MySpacing.width(4),
                 CustomPopupMenu(
                   backdrop: true,
@@ -155,16 +155,16 @@ class _TopBarState extends State<TopBar>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        MyContainer.rounded(
-                            paddingAll: 0,
-                            child: Image.asset(
-                              Images.avatars[0],
-                              height: 28,
-                              width: 28,
-                              fit: BoxFit.cover,
-                            )),
+                        // MyContainer.rounded(
+                        //     paddingAll: 0,
+                        //     child: Image.asset(
+                        //       Images.avatars[0],
+                        //       height: 28,
+                        //       width: 28,
+                        //       fit: BoxFit.cover,
+                        //     )),
                         MySpacing.width(8),
-                        MyText.labelLarge("Den")
+                        MyText.labelLarge("Admin")
                       ],
                     ),
                   ),
