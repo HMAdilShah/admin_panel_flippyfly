@@ -41,9 +41,9 @@ class _EditProfileState extends State<EditProfile>
     controller = Get.put(EditProfileController());
   }
 
-  final ImagePicker picker = ImagePicker();
+  // final ImagePicker picker = ImagePicker();
 
-  XFile? imageFile;
+  // XFile? imageFile;
 
   @override
   Widget build(BuildContext context) {
@@ -83,105 +83,118 @@ class _EditProfileState extends State<EditProfile>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            InkWell(
-                              onTap: () async {
-                                imageFile = await picker.pickImage(
-                                    source: ImageSource.gallery);
-                                debugPrint(
-                                    "imageFile!.path --------------------->>> ${imageFile!.path}");
-                                setState(() {});
-                              },
-                              child: Stack(
-                                alignment: Alignment.bottomRight,
-                                children: [
-                                  imageFile == null
-                                      ? MyContainer.rounded(
-                                          height: 150,
-                                          width: 150,
-                                          paddingAll: 0,
-                                          clipBehavior:
-                                              Clip.antiAliasWithSaveLayer,
-                                          child: Image.asset(
-                                            Images.avatars[0],
-                                            fit: BoxFit.cover,
-                                          ))
-                                      : MyContainer.rounded(
-                                          paddingAll: 0,
-                                          clipBehavior:
-                                              Clip.antiAliasWithSaveLayer,
-                                          child: Image.file(
-                                              File(imageFile!.path),
-                                              fit: BoxFit.cover),
-                                        ),
-                                ],
-                              ),
-                            ),
-                            MySpacing.height(20),
+                            // -- Profile Image Picker (commented out as per client request) --
+                            // InkWell(
+                            //   onTap: () async {
+                            //     imageFile = await picker.pickImage(
+                            //         source: ImageSource.gallery);
+                            //     debugPrint(
+                            //         "imageFile!.path --------------------->>> ${imageFile!.path}");
+                            //     setState(() {});
+                            //   },
+                            //   child: Stack(
+                            //     alignment: Alignment.bottomRight,
+                            //     children: [
+                            //       imageFile == null
+                            //           ? MyContainer.rounded(
+                            //               height: 150,
+                            //               width: 150,
+                            //               paddingAll: 0,
+                            //               clipBehavior:
+                            //                   Clip.antiAliasWithSaveLayer,
+                            //               child: Image.asset(
+                            //                 Images.avatars[0],
+                            //                 fit: BoxFit.cover,
+                            //               ))
+                            //           : MyContainer.rounded(
+                            //               paddingAll: 0,
+                            //               clipBehavior:
+                            //                   Clip.antiAliasWithSaveLayer,
+                            //               child: Image.file(
+                            //                   File(imageFile!.path),
+                            //                   fit: BoxFit.cover),
+                            //             ),
+                            //     ],
+                            //   ),
+                            // ),
+                            // MySpacing.height(20),
+
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                buildTextField(
-                                    "First Name", "Enter your First Name"),
-                                MySpacing.height(20),
-                                buildTextField(
-                                    "Last Name", "Enter your Last Name"),
-                                MySpacing.height(20),
+                                // -- First Name (commented out as per client request) --
+                                // buildTextField(
+                                //     "First Name", "Enter your First Name"),
+                                // MySpacing.height(20),
+
+                                // -- Last Name (commented out as per client request) --
+                                // buildTextField(
+                                //     "Last Name", "Enter your Last Name"),
+                                // MySpacing.height(20),
+
+                                // -- Email Address (commented out as per client request) --
+                                // MyText.labelMedium(
+                                //   "Email address",
+                                // ),
+                                // MySpacing.height(8),
+                                // Form(
+                                //   autovalidateMode:
+                                //       AutovalidateMode.onUserInteraction,
+                                //   child: TextFormField(
+                                //     validator: (value) {
+                                //       if (value != null && value.isEmpty) {
+                                //         return 'Email is required';
+                                //       }
+                                //       if (value != null &&
+                                //           !MyStringUtils.isEmail(value)) {
+                                //         return 'Invalid Email';
+                                //       }
+                                //       return null;
+                                //     },
+                                //     decoration: InputDecoration(
+                                //       hintText: "Enter Email Address",
+                                //       hintStyle:
+                                //           MyTextStyle.bodySmall(xMuted: true),
+                                //       border: outlineInputBorder,
+                                //       enabledBorder: outlineInputBorder,
+                                //       focusedBorder: focusedInputBorder,
+                                //       contentPadding: MySpacing.all(16),
+                                //       isCollapsed: true,
+                                //     ),
+                                //   ),
+                                // ),
+                                // MySpacing.height(20),
+
+                                // -- Contact Number (commented out as per client request) --
+                                // MyText.labelMedium(
+                                //   "Contact Number",
+                                // ),
+                                // MySpacing.height(8),
+                                // TextFormField(
+                                //   inputFormatters: [
+                                //     LengthLimitingTextInputFormatter(10),
+                                //     PhoneInputFormatter(),
+                                //   ],
+                                //   decoration: InputDecoration(
+                                //     hintText: "Enter Contact Number",
+                                //     hintStyle:
+                                //         MyTextStyle.bodySmall(xMuted: true),
+                                //     border: outlineInputBorder,
+                                //     enabledBorder: outlineInputBorder,
+                                //     focusedBorder: focusedInputBorder,
+                                //     contentPadding: MySpacing.all(16),
+                                //     isCollapsed: true,
+                                //   ),
+                                // ),
+                                // MySpacing.height(20),
+
+                                // -- Address (commented out as per client request) --
+                                // buildTextField("Address", "Enter Address"),
+                                // MySpacing.height(20),
+
+                                // -- Password Field (active) --
                                 MyText.labelMedium(
-                                  "Email address",
-                                ),
-                                MySpacing.height(8),
-                                Form(
-                                  autovalidateMode:
-                                      AutovalidateMode.onUserInteraction,
-                                  child: TextFormField(
-                                    validator: (value) {
-                                      if (value != null && value.isEmpty) {
-                                        return 'Email is required';
-                                      }
-                                      if (value != null &&
-                                          !MyStringUtils.isEmail(value)) {
-                                        return 'Invalid Email';
-                                      }
-                                      return null;
-                                    },
-                                    decoration: InputDecoration(
-                                      hintText: "Enter Email Address",
-                                      hintStyle:
-                                          MyTextStyle.bodySmall(xMuted: true),
-                                      border: outlineInputBorder,
-                                      enabledBorder: outlineInputBorder,
-                                      focusedBorder: focusedInputBorder,
-                                      contentPadding: MySpacing.all(16),
-                                      isCollapsed: true,
-                                    ),
-                                  ),
-                                ),
-                                MySpacing.height(20),
-                                MyText.labelMedium(
-                                  "Contact Number",
-                                ),
-                                MySpacing.height(8),
-                                TextFormField(
-                                  inputFormatters: [
-                                    LengthLimitingTextInputFormatter(10),
-                                    PhoneInputFormatter(),
-                                  ],
-                                  decoration: InputDecoration(
-                                    hintText: "Enter Contact Number",
-                                    hintStyle:
-                                        MyTextStyle.bodySmall(xMuted: true),
-                                    border: outlineInputBorder,
-                                    enabledBorder: outlineInputBorder,
-                                    focusedBorder: focusedInputBorder,
-                                    contentPadding: MySpacing.all(16),
-                                    isCollapsed: true,
-                                  ),
-                                ),
-                                MySpacing.height(20),
-                                buildTextField("Address", "Enter Address"),
-                                MySpacing.height(20),
-                                MyText.labelMedium(
-                                  "password",
+                                  "Password",
                                 ),
                                 MySpacing.height(8),
                                 TextFormField(
@@ -194,7 +207,7 @@ class _EditProfileState extends State<EditProfile>
                                   decoration: InputDecoration(
                                     hintText: "Password",
                                     hintStyle:
-                                        MyTextStyle.bodySmall(xMuted: true),
+                                    MyTextStyle.bodySmall(xMuted: true),
                                     border: outlineInputBorder,
                                     enabledBorder: outlineInputBorder,
                                     focusedBorder: focusedInputBorder,
@@ -210,7 +223,7 @@ class _EditProfileState extends State<EditProfile>
                                     contentPadding: MySpacing.all(16),
                                     isCollapsed: true,
                                     floatingLabelBehavior:
-                                        FloatingLabelBehavior.never,
+                                    FloatingLabelBehavior.never,
                                   ),
                                 ),
                                 MySpacing.height(20),
@@ -241,27 +254,28 @@ class _EditProfileState extends State<EditProfile>
     );
   }
 
-  Widget buildTextField(String fieldTitle, String hintText) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        MyText.labelMedium(
-          fieldTitle,
-        ),
-        MySpacing.height(8),
-        TextFormField(
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: MyTextStyle.bodySmall(xMuted: true),
-            border: outlineInputBorder,
-            contentPadding: MySpacing.all(16),
-            isCollapsed: true,
-            floatingLabelBehavior: FloatingLabelBehavior.never,
-          ),
-        ),
-      ],
-    );
-  }
+// -- buildTextField helper (kept for potential future use) --
+// Widget buildTextField(String fieldTitle, String hintText) {
+//   return Column(
+//     crossAxisAlignment: CrossAxisAlignment.start,
+//     children: [
+//       MyText.labelMedium(
+//         fieldTitle,
+//       ),
+//       MySpacing.height(8),
+//       TextFormField(
+//         decoration: InputDecoration(
+//           hintText: hintText,
+//           hintStyle: MyTextStyle.bodySmall(xMuted: true),
+//           border: outlineInputBorder,
+//           contentPadding: MySpacing.all(16),
+//           isCollapsed: true,
+//           floatingLabelBehavior: FloatingLabelBehavior.never,
+//         ),
+//       ),
+//     ],
+//   );
+// }
 }
 
 class PhoneInputFormatter extends TextInputFormatter {

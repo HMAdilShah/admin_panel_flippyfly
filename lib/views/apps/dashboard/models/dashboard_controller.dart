@@ -19,11 +19,9 @@ class DashboardController extends GetxController {
   RxList<Map<String, dynamic>> transactions = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> userLedgers = <Map<String, dynamic>>[].obs;
 
-
   RxMap<String, double> monthlyRevenue = <String, double>{}.obs;
   RxList<Map<String, dynamic>> activeMemberships = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> pendingPayments = <Map<String, dynamic>>[].obs;
-
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -47,6 +45,65 @@ class DashboardController extends GetxController {
   RxInt ticketsResolved = 0.obs;
   RxInt ticketsInProgress = 0.obs;
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // HELPER: safely cast List<dynamic> → List<Map<String, dynamic>>
+  // Firestore always returns List<dynamic> for array fields — never cast directly
+  // ─────────────────────────────────────────────────────────────────────────
+  static List<Map<String, dynamic>> _castList(dynamic raw) {
+    if (raw == null) return [];
+    return (raw as List<dynamic>)
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // COUNTRY CODE → FULL NAME MAP
+  // ─────────────────────────────────────────────────────────────────────────
+  static const Map<String, String> _countryCodeToName = {
+    'AF': 'Afghanistan', 'AL': 'Albania', 'DZ': 'Algeria',
+    'AR': 'Argentina', 'AU': 'Australia', 'AT': 'Austria',
+    'AZ': 'Azerbaijan', 'BH': 'Bahrain', 'BD': 'Bangladesh',
+    'BE': 'Belgium', 'BR': 'Brazil', 'CA': 'Canada',
+    'CN': 'China', 'CO': 'Colombia', 'HR': 'Croatia',
+    'CY': 'Cyprus', 'CZ': 'Czech Republic', 'DK': 'Denmark',
+    'EG': 'Egypt', 'ET': 'Ethiopia', 'FI': 'Finland',
+    'FR': 'France', 'GE': 'Georgia', 'DE': 'Germany',
+    'GH': 'Ghana', 'GR': 'Greece', 'HK': 'Hong Kong',
+    'HU': 'Hungary', 'IN': 'India', 'ID': 'Indonesia',
+    'IR': 'Iran', 'IQ': 'Iraq', 'IE': 'Ireland',
+    'IL': 'Israel', 'IT': 'Italy', 'JP': 'Japan',
+    'JO': 'Jordan', 'KZ': 'Kazakhstan', 'KE': 'Kenya',
+    'KW': 'Kuwait', 'LB': 'Lebanon', 'LY': 'Libya',
+    'MY': 'Malaysia', 'MV': 'Maldives', 'MX': 'Mexico',
+    'MA': 'Morocco', 'MM': 'Myanmar', 'NP': 'Nepal',
+    'NL': 'Netherlands', 'NZ': 'New Zealand', 'NG': 'Nigeria',
+    'NO': 'Norway', 'OM': 'Oman', 'PK': 'Pakistan',
+    'PS': 'Palestine', 'PE': 'Peru', 'PH': 'Philippines',
+    'PL': 'Poland', 'PT': 'Portugal', 'QA': 'Qatar',
+    'RO': 'Romania', 'RU': 'Russia', 'SA': 'Saudi Arabia',
+    'SN': 'Senegal', 'RS': 'Serbia', 'SG': 'Singapore',
+    'ZA': 'South Africa', 'KR': 'South Korea', 'ES': 'Spain',
+    'LK': 'Sri Lanka', 'SD': 'Sudan', 'SE': 'Sweden',
+    'CH': 'Switzerland', 'SY': 'Syria', 'TW': 'Taiwan',
+    'TZ': 'Tanzania', 'TH': 'Thailand', 'TN': 'Tunisia',
+    'TR': 'Turkey', 'UG': 'Uganda', 'UA': 'Ukraine',
+    'AE': 'United Arab Emirates', 'GB': 'United Kingdom',
+    'US': 'United States', 'UZ': 'Uzbekistan', 'VE': 'Venezuela',
+    'VN': 'Vietnam', 'YE': 'Yemen', 'ZM': 'Zambia', 'ZW': 'Zimbabwe',
+  };
+
+  /// Normalizes "PK" → "Pakistan", "Pakistan" → "Pakistan"
+  String _normalizeCountry(dynamic raw) {
+    if (raw == null || raw.toString().trim().isEmpty) return 'Unknown';
+    final str = raw.toString().trim();
+    final upper = str.toUpperCase();
+    if (upper.length == 2 && _countryCodeToName.containsKey(upper)) {
+      return _countryCodeToName[upper]!;
+    }
+    return str;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -57,7 +114,6 @@ class DashboardController extends GetxController {
   Future<void> loadDashboard() async {
     isLoading.value = true;
 
-    // Run independent tasks in parallel
     await Future.wait([
       fetchUsers(),
       fetchTickets(),
@@ -65,21 +121,18 @@ class DashboardController extends GetxController {
       fetchTransactions(),
     ]);
 
-    // These depend on transactions, so run sequentially
     await calculateUserLedgers();
     await generateBusinessReports();
-
     await loadFinancialReports();
 
     isLoading.value = false;
   }
 
+  // ================= FINANCIAL REPORTS =================
   Future<void> loadFinancialReports() async {
     final metaDoc =
     firestore.collection('dashboard_financial_meta').doc('financial_cache');
-
     final snap = await metaDoc.get();
-
     bool shouldRecalculate = true;
 
     if (snap.exists) {
@@ -97,32 +150,37 @@ class DashboardController extends GetxController {
   }
 
   Future<void> loadCachedReports() async {
-    final txSnap =
-    await firestore.collection('dashboard_transactions').get();
-
+    final txSnap = await firestore.collection('dashboard_transactions').get();
     final ledgerSnap =
     await firestore.collection('dashboard_user_ledgers').get();
 
-    cachedTransactions.value =
-        txSnap.docs.map((d) => d.data()).toList();
+    // ✅ Safe cast each document from Firestore
+    cachedTransactions.value = txSnap.docs
+        .map((d) => Map<String, dynamic>.from(d.data()))
+        .toList();
 
-    cachedUserLedgers.value =
-        ledgerSnap.docs.map((d) => d.data()).toList();
+    cachedUserLedgers.value = ledgerSnap.docs.map((d) {
+      final map = Map<String, dynamic>.from(d.data());
+      // ✅ Safe cast nested transactions list
+      map['transactions'] = _castList(map['transactions']);
+      return map;
+    }).toList();
   }
+
   Future<void> recalculateFinancialReports(DocumentReference metaDoc) async {
     List<Map<String, dynamic>> allTransactions = [];
     Map<String, Map<String, dynamic>> ledgerMap = {};
 
-    // ================= MEMBERSHIP =================
     final usersSnap = await firestore.collection('users').get();
     Map<String, Map<String, dynamic>> userMap = {
-      for (var u in usersSnap.docs) u.id: u.data()
+      for (var u in usersSnap.docs)
+        u.id: Map<String, dynamic>.from(u.data())
     };
-    for (var doc in usersSnap.docs) {
-      final u = doc.data();
 
+    for (var doc in usersSnap.docs) {
+      final u = Map<String, dynamic>.from(doc.data());
       if (u['plan_name'] == 'Premium') {
-        final tx = {
+        allTransactions.add({
           'userId': doc.id,
           'userName': u['name'],
           'email': u['email'],
@@ -132,20 +190,15 @@ class DashboardController extends GetxController {
           'status': 'completed',
           'date': u['plan_start_date'],
           'expiryDate': u['plan_renewal_date'],
-        };
-
-        allTransactions.add(tx);
+        });
       }
     }
 
-    // ================= READYMADE =================
     final readymadeSnap =
     await firestore.collection('users_readymate_plan').get();
-
     for (var doc in readymadeSnap.docs) {
-      final d = doc.data();
-
-      final tx = {
+      final d = Map<String, dynamic>.from(doc.data());
+      allTransactions.add({
         'userId': d['user_id'],
         'userName': userMap[d['user_id']]?['name'] ?? 'Unknown',
         'email': d['user_email'],
@@ -155,23 +208,14 @@ class DashboardController extends GetxController {
         'status': 'completed',
         'date': d['created_at'],
         'expiryDate': d['expiryDate'],
-      };
-
-      allTransactions.add(tx);
+      });
     }
 
-    // ================= CUSTOM PLANS =================
-    final customSnap =
-    await firestore.collection('users_plan').get();
-
+    final customSnap = await firestore.collection('users_plan').get();
     for (var doc in customSnap.docs) {
-      final d = doc.data();
-
-      double paid =
-          double.tryParse(d['paid_flipis_amount'].toString()) ?? 0;
-
-      double remaining =
-      (d['remaining_flipis_amount'] ?? 0).toDouble();
+      final d = Map<String, dynamic>.from(doc.data());
+      double paid = double.tryParse(d['paid_flipis_amount'].toString()) ?? 0;
+      double remaining = (d['remaining_flipis_amount'] ?? 0).toDouble();
 
       if (paid > 0) {
         allTransactions.add({
@@ -186,7 +230,6 @@ class DashboardController extends GetxController {
           'expiryDate': null,
         });
       }
-
       if (remaining > 0) {
         allTransactions.add({
           'userId': d['user_id'],
@@ -202,17 +245,17 @@ class DashboardController extends GetxController {
       }
     }
 
-    // ================= BUILD LEDGER =================
     for (var tx in allTransactions) {
-      final uid = tx['userId'];
+      final uid = (tx['userId'] ?? '').toString();
+      if (uid.isEmpty) continue;
 
       ledgerMap.putIfAbsent(uid, () => {
         'userId': uid,
         'userName': tx['userName'] ?? 'Unknown',
-        'email': tx['email'],
+        'email': tx['email'] ?? '',
         'totalPaid': 0.0,
         'pending': 0.0,
-        'transactions': [],
+        'transactions': <Map<String, dynamic>>[],
       });
 
       if (tx['status'] == 'completed') {
@@ -220,46 +263,35 @@ class DashboardController extends GetxController {
       } else {
         ledgerMap[uid]!['pending'] += tx['amount'];
       }
-
-      ledgerMap[uid]!['transactions'].add(tx);
+      (ledgerMap[uid]!['transactions'] as List<Map<String, dynamic>>).add(tx);
     }
 
-    // ================= SAVE TO CACHE =================
     final batch = firestore.batch();
-
-    // Clear old
     final oldTx = await firestore.collection('dashboard_transactions').get();
-    for (var d in oldTx.docs) {
-      batch.delete(d.reference);
-    }
+    for (var d in oldTx.docs) batch.delete(d.reference);
 
     final oldLedger =
     await firestore.collection('dashboard_user_ledgers').get();
-    for (var d in oldLedger.docs) {
-      batch.delete(d.reference);
-    }
+    for (var d in oldLedger.docs) batch.delete(d.reference);
 
     for (var tx in allTransactions) {
-      batch.set(
-          firestore.collection('dashboard_transactions').doc(), tx);
+      batch.set(firestore.collection('dashboard_transactions').doc(), tx);
     }
-
     for (var l in ledgerMap.values) {
       batch.set(
-          firestore.collection('dashboard_user_ledgers').doc(l['userId']),
+          firestore
+              .collection('dashboard_user_ledgers')
+              .doc(l['userId'] as String),
           l);
     }
-
-    batch.set(metaDoc, {
-      'lastCalculatedAt': Timestamp.now(),
-    });
-
+    batch.set(metaDoc, {'lastCalculatedAt': Timestamp.now()});
     await batch.commit();
 
     cachedTransactions.value = allTransactions;
     cachedUserLedgers.value = ledgerMap.values.toList();
   }
 
+  // ================= FETCH TRANSACTIONS =================
   Future<void> fetchTransactions() async {
     final snap = await firestore
         .collection('transactions')
@@ -268,12 +300,10 @@ class DashboardController extends GetxController {
 
     double total = 0;
     double pending = 0;
-
     List<Map<String, dynamic>> list = [];
 
     for (var doc in snap.docs) {
-      final d = doc.data();
-
+      final d = Map<String, dynamic>.from(doc.data());
       double amount = (d['amount'] ?? 0).toDouble();
       String status = d['status'] ?? 'pending';
 
@@ -286,9 +316,7 @@ class DashboardController extends GetxController {
       list.add({
         'id': doc.id,
         'userId': d['userId'],
-        // 'userName': d['userName'] ?? '',
         'userName': d['userName'] ?? d['name'] ?? 'Unknown',
-
         'email': d['email'] ?? '',
         'planName': d['plan_name'],
         'planType': d['type'] ?? 'membership',
@@ -306,18 +334,17 @@ class DashboardController extends GetxController {
     pendingRevenue.value = pending;
   }
 
+  // ================= USER LEDGERS =================
   Future<void> calculateUserLedgers() async {
     Map<String, Map<String, dynamic>> ledgerMap = {};
 
     for (var tx in transactions) {
-      String uid = tx['userId'] ?? '';
-
+      String uid = (tx['userId'] ?? '').toString();
       if (uid.isEmpty) continue;
 
       ledgerMap.putIfAbsent(uid, () => {
         'userId': uid,
         'userName': tx['userName'] ?? 'Unknown',
-
         'email': tx['email'] ?? '',
         'totalPaid': 0.0,
         'pending': 0.0,
@@ -335,30 +362,28 @@ class DashboardController extends GetxController {
         ledgerMap[uid]!['pending'] += amount;
       }
 
-      // Expiry Handling
       if (tx['expiryDate'] != null && tx['expiryDate'] is Timestamp) {
         DateTime expiry = (tx['expiryDate'] as Timestamp).toDate();
-
         if (expiry.isAfter(DateTime.now())) {
-          ledgerMap[uid]!['activePlans'].add(tx);
+          (ledgerMap[uid]!['activePlans'] as List<Map<String, dynamic>>)
+              .add(tx);
         } else {
-          ledgerMap[uid]!['expiredPlans'].add(tx);
+          (ledgerMap[uid]!['expiredPlans'] as List<Map<String, dynamic>>)
+              .add(tx);
         }
       }
-
-      ledgerMap[uid]!['transactions'].add(tx);
+      (ledgerMap[uid]!['transactions'] as List<Map<String, dynamic>>).add(tx);
     }
 
     userLedgers.value = ledgerMap.values.map((e) {
       return {
         ...e,
-        'transactions': e['transactions'] ?? [],
-        'activePlans': e['activePlans'] ?? [],
-        'expiredPlans': e['expiredPlans'] ?? [],
+        'transactions': e['transactions'] as List<Map<String, dynamic>>,
+        'activePlans': e['activePlans'] as List<Map<String, dynamic>>,
+        'expiredPlans': e['expiredPlans'] as List<Map<String, dynamic>>,
       };
     }).toList();
   }
-
 
   // ================= USERS =================
   Future<void> fetchUsers() async {
@@ -369,19 +394,26 @@ class DashboardController extends GetxController {
     List<Map<String, dynamic>> list = [];
 
     for (var doc in snap.docs) {
-      final d = doc.data();
+      final d = Map<String, dynamic>.from(doc.data());
       final plan = d['plan_name'] ?? 'Free';
 
       plan == 'Premium' ? paid++ : free++;
 
-      final country = d['country'] ?? 'Unknown';
+      // ✅ Normalize: "PK" → "Pakistan"
+      final country = _normalizeCountry(d['country']);
       countryMap[country] = (countryMap[country] ?? 0) + 1;
+
+      // ✅ Safe cast: Firestore List<dynamic> → List<Map<String, dynamic>>
+      final List<Map<String, dynamic>> purchases = _castList(d['purchases']);
 
       list.add({
         'id': doc.id,
-        'name': d['name'],
-        'email': d['email'],
-        'plan': plan,
+        'name': d['name'] ?? 'Unknown',
+        'email': d['email'] ?? '',
+        'plan_name': plan,
+        'country': country,
+        'avatar_url': d['avatar_url'],
+        'purchases': purchases,       // ✅ now strongly typed
         'created_at': d['created_at'],
       });
     }
@@ -398,7 +430,6 @@ class DashboardController extends GetxController {
     final snap = await firestore.collection('support_tickets').get();
 
     int resolved = 0, progress = 0;
-
     for (var d in snap.docs) {
       d['status'] == 'Resolved' ? resolved++ : progress++;
     }
@@ -427,7 +458,6 @@ class DashboardController extends GetxController {
     int readymade = 0;
     int custom = 0;
 
-    // Readymade = users with plan_name
     final usersSnap = await firestore.collection('users').get();
     for (var u in usersSnap.docs) {
       if (u['plan_name'] == 'Standard' || u['plan_name'] == 'Premium') {
@@ -435,11 +465,9 @@ class DashboardController extends GetxController {
       }
     }
 
-    // Custom = users_plan collection
     final customSnap = await firestore.collection('users_plan').get();
     custom = customSnap.size;
 
-    // Popular plans
     Map<String, int> planCount = {};
     for (var u in usersSnap.docs) {
       final plan = u['plan_name'];
@@ -448,10 +476,6 @@ class DashboardController extends GetxController {
       }
     }
 
-    // final popular = planCount.entries
-    //     .map((e) => {'title': e.key, 'sold': e.value})
-    //     .toList()
-    //   ..sort((a, b) => b['sold']?.compareTo(a['sold']));
     final popular = planCount.entries
         .map((e) => {'title': e.key, 'sold': e.value})
         .toList()
@@ -460,6 +484,7 @@ class DashboardController extends GetxController {
         final bi = (b['sold'] as int?) ?? 0;
         return bi.compareTo(ai);
       });
+
     final payload = {
       'readymadeSold': readymade,
       'customSold': custom,
@@ -476,31 +501,28 @@ class DashboardController extends GetxController {
     readymadeSold.value = data['readymadeSold'];
     customSold.value = data['customSold'];
     specialSold.value = data['specialSold'];
-    popularPlans.value = List<Map<String, dynamic>>.from(data['popularPlans']);
+    // ✅ Safe cast: Firestore List<dynamic> → List<Map<String, dynamic>>
+    popularPlans.value = _castList(data['popularPlans']);
   }
 
-
+  // ================= BUSINESS REPORTS =================
   Future<void> generateBusinessReports() async {
     Map<String, double> monthMap = {};
     List<Map<String, dynamic>> active = [];
     List<Map<String, dynamic>> pending = [];
 
     for (var tx in transactions) {
-      // Monthly revenue
       if (tx['date'] != null) {
         DateTime d = (tx['date'] as Timestamp).toDate();
         String key = "${d.year}-${d.month}";
-
         monthMap[key] = (monthMap[key] ?? 0) + tx['amount'];
       }
 
-      // Pending payments
       if (tx['status'] != 'completed') {
         pending.add(tx);
       }
 
-      // Active memberships
-      if (tx['expiryDate'] != null) {
+      if (tx['expiryDate'] != null && tx['expiryDate'] is Timestamp) {
         DateTime exp = (tx['expiryDate'] as Timestamp).toDate();
         if (exp.isAfter(DateTime.now())) {
           active.add(tx);
@@ -512,5 +534,4 @@ class DashboardController extends GetxController {
     pendingPayments.value = pending;
     activeMemberships.value = active;
   }
-
 }

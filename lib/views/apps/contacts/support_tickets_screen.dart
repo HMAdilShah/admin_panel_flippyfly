@@ -12,7 +12,7 @@ class SupportTicketsScreen extends StatefulWidget {
 
 class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
   final ticketsCollection =
-      FirebaseFirestore.instance.collection('support_tickets');
+  FirebaseFirestore.instance.collection('support_tickets');
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -45,14 +45,13 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
         return const Color(0xFF835FFF);
     }
   }
+
   String _formatDate(dynamic timestamp) {
     if (timestamp == null) return '--';
-
     if (timestamp is Timestamp) {
       final date = timestamp.toDate();
       return '${date.day}/${date.month}/${date.year}';
     }
-
     return '--';
   }
 
@@ -120,7 +119,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
 
                   final topic = (data['topic'] ?? '').toString().toLowerCase();
                   final email =
-                      (data['userEmail'] ?? '').toString().toLowerCase();
+                  (data['userEmail'] ?? '').toString().toLowerCase();
                   final status = (data['status'] ?? '').toString();
 
                   final matchesSearch =
@@ -155,129 +154,14 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                   return const Center(child: Text('No tickets found'));
                 }
 
-                /*return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: tickets.length,
-                  itemBuilder: (context, index) {
-                    final doc = tickets[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    final status = data['status'] ?? 'in process';
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 2,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => Get.to(
-                            () => TicketDetailScreen(ticketId: doc.id)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // TOP ROW: Ticket ID + Status
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Ticket #${doc.id}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: _getStatusColor(status)
-                                          .withOpacity(0.15),
-                                      borderRadius:
-                                          BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      status.toUpperCase(),
-                                      style: TextStyle(
-                                        color: _getStatusColor(status),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              // TOPIC
-                              Text(
-                                data['topic'] ?? 'No topic',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-
-                              const SizedBox(height: 6),
-
-                              // DETAILS PREVIEW
-                              Text(
-                                data['details'] ?? '',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.black54,
-                                ),
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              // USER + DATE
-                              Row(
-                                children: [
-                                  const Icon(Icons.person_outline,
-                                      size: 16),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      '${data['userName'] ?? 'Unknown'} • ${data['userEmail'] ?? ''}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _formatDate(data['createdAt']),
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.black45,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );*/
-
                 return GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   itemCount: tickets.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // 🔥 2 tickets per row
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 1.25, // balanced card height
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    mainAxisExtent: 140,
                   ),
                   itemBuilder: (context, index) {
                     final doc = tickets[index];
@@ -292,37 +176,42 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                       child: Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                            borderRadius: BorderRadius.circular(14)),
+                        margin: EdgeInsets.zero,
                         child: Padding(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8), // ← tighter padding
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // Ticket ID + Status
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
                                 children: [
-
                                   Text(
-                                    ticketNo != null ? 'Ticket #$ticketNo' : 'Ticket #----',
+                                    ticketNo != null
+                                        ? '#$ticketNo'
+                                        : '#----', // ← shorter label
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                     ),
                                   ),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 4),
+                                        horizontal: 7, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: _getStatusColor(status).withOpacity(0.15),
+                                      color: _getStatusColor(status)
+                                          .withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       status.toUpperCase(),
                                       style: TextStyle(
                                         color: _getStatusColor(status),
-                                        fontSize: 11,
+                                        fontSize: 9.5,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -330,47 +219,47 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                 ],
                               ),
 
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 4),
 
                               // Topic
                               Text(
                                 data['topic'] ?? 'No topic',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.2,
+                                ),
+                              ),
+
+                              const SizedBox(height: 3),
+
+                              // Preview
+                              Text(
+                                data['details'] ?? '',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black54,
+                                  fontSize: 11.5,
+                                  height: 1.2,
                                 ),
                               ),
 
-                              const SizedBox(height: 6),
-
-                              // Preview
-                              Expanded(
-                                child: Text(
-                                  data['details'] ?? '',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 6),
+                              const Spacer(),
 
                               // User + Date
                               Row(
                                 children: [
-                                  const Icon(Icons.person_outline, size: 14),
-                                  const SizedBox(width: 4),
+                                  const Icon(Icons.person_outline, size: 12),
+                                  const SizedBox(width: 3),
                                   Expanded(
                                     child: Text(
                                       data['userName'] ?? 'Unknown',
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         color: Colors.black54,
                                       ),
                                     ),
@@ -378,7 +267,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                   Text(
                                     _formatDate(data['createdAt']),
                                     style: const TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       color: Colors.black45,
                                     ),
                                   ),
@@ -391,7 +280,6 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                     );
                   },
                 );
-
               },
             ),
           ),
@@ -596,7 +484,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           borderRadius: BorderRadius.circular(12))),
                   child: const Text('Update Ticket',
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -622,7 +510,6 @@ class StatusFilterDropdown extends StatelessWidget {
     return PopupMenuButton<String>(
       onSelected: onChanged,
       color: Colors.white,
-      // ✅ REAL background color
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
