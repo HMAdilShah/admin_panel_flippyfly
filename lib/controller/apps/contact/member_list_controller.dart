@@ -57,7 +57,21 @@ class MemberListController extends GetxController {
       loading.value = false;
     }
   }
+  Future<void> toggleUserStatus(AppUserModel user) async {
+    final isBlocked = user.userStatus.toLowerCase() == 'blocked';
+    final newStatus = isBlocked ? 'active' : 'blocked';
+    final action = isBlocked ? 'Unblocked' : 'Blocked';
 
+    try {
+      await _db
+          .collection('users')
+          .doc(user.id)
+          .update({'user_status': newStatus});
+      Get.snackbar(action, '${user.name} has been $action');
+    } catch (e) {
+      Get.snackbar('Error', e.toString());
+    }
+  }
   Future<List<AppUserModel>> fetchUsersOnce() async {
     final snapshot = await _db.collection('users').get();
     return snapshot.docs.map((d) => AppUserModel.fromDoc(d)).toList();

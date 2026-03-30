@@ -16,14 +16,12 @@ import 'package:webkit/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform);
   setPathUrlStrategy();
-
   await LocalStorage.init();
   AppStyle.init();
   await ThemeCustomizer.init();
-  // await Translator.clearTrans();
-  // Translator.getUnTrans();
 
   runApp(ChangeNotifierProvider<AppNotifier>(
     create: (context) => AppNotifier(),
@@ -46,7 +44,6 @@ class MyApp extends StatelessWidget {
           navigatorKey: NavigationService.navigatorKey,
           initialRoute: "/dashboard",
           getPages: getPageRoute(),
-          // onGenerateRoute: (_) => generateRoute(context, _),
           builder: (context, child) {
             NavigationService.registerContext(context);
             return Directionality(
@@ -60,8 +57,6 @@ class MyApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: Language.getLocales(),
-
-          // home: ButtonsPage(),
         );
       },
     );

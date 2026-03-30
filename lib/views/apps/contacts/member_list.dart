@@ -269,29 +269,46 @@ class _MemberListState extends State<MemberList> {
                                 MySpacing.height(6),
 
                                 // Block Button
+// Block / Unblock toggle button
                                 MyButton(
                                   onPressed: () async {
+                                    final isBlocked = user.userStatus.toLowerCase() == 'blocked';
+                                    final action = isBlocked ? 'Unblock' : 'Block';
+
                                     final confirm = await showDialog<bool>(
                                       context: context,
                                       builder: (c) => AlertDialog(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12)),
                                         title: MyText.titleMedium("Confirm", fontWeight: 700),
-                                        content: MyText.bodyMedium("Block ${user.name}?"),
+                                        content: MyText.bodyMedium("$action ${user.name}?"),
                                         actions: [
-                                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text("Cancel")),
-                                          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text("Block")),
+                                          TextButton(
+                                              onPressed: () => Navigator.pop(c, false),
+                                              child: const Text("Cancel")),
+                                          TextButton(
+                                              onPressed: () => Navigator.pop(c, true),
+                                              child: Text(action)),
                                         ],
                                       ),
                                     );
-                                    if (!mounted) return;   // Add this
-                                    if (confirm == true) controller.blockUser(user);
+
+                                    if (!mounted) return;
+                                    if (confirm == true) controller.toggleUserStatus(user);
                                   },
-                                  backgroundColor: accentPink.withOpacity(0.15),
+                                  backgroundColor: user.userStatus.toLowerCase() == 'blocked'
+                                      ? Colors.green.withOpacity(0.15)   // green tint when blocked
+                                      : accentPink.withOpacity(0.15),    // pink tint when active
                                   borderRadiusAll: 12,
                                   padding: MySpacing.xy(14, 10),
-                                  child: MyText.bodySmall("Block", color: accentPink, fontWeight: 700),
-                                ),
-                              ],
+                                  child: MyText.bodySmall(
+                                    user.userStatus.toLowerCase() == 'blocked' ? "Unblock" : "Block",
+                                    color: user.userStatus.toLowerCase() == 'blocked'
+                                        ? Colors.green[700]
+                                        : accentPink,
+                                    fontWeight: 700,
+                                  ),
+                                ),                              ],
                             ),
                           ],
                         ),

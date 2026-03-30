@@ -240,8 +240,27 @@ class _BannerManagementState extends State<BannerManagement> with UIMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    MyText.titleMedium("Add New Banner",
-                        fontWeight: 600, color: darkText),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        MyText.titleMedium("Add New Banner",
+                            fontWeight: 600, color: darkText),
+                        MySpacing.width(12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: primary.withOpacity(0.3)),
+                          ),
+                          child: MyText.bodySmall(
+                            "Banner dimensions should be: 1024x546",
+                            color: primary,
+                            fontWeight: 500,
+                          ),
+                        ),
+                      ],
+                    ),
                     MySpacing.height(20),
 
                     GestureDetector(

@@ -25,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -47,18 +41,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCfa1QTZtRIvp6qB46UNZwT_ZpRLcFDRKo',
-    appId: '1:792157443286:web:edf4f730f632ca0cfce577',
+    apiKey: 'AIzaSyBz3H-rpXB-YdODRqJV_Ny10ufpuSlVOkM',
+    appId: '1:792157443286:web:2f0e43922a58092cfce577',
     messagingSenderId: '792157443286',
     projectId: 'flipifly-9df88',
     authDomain: 'flipifly-9df88.firebaseapp.com',
     storageBucket: 'flipifly-9df88.firebasestorage.app',
-    measurementId: 'G-SDVB99M3GF',
+    measurementId: 'G-WHP1H4V6VJ',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDrE89ML2eZTUZUAIIacFOzSmI6Kq0fMiU',
-    appId: '1:792157443286:android:c04ceb6b9541f008fce577',
+    appId: '1:792157443286:android:d7e2fcd5a2f20551fce577',
     messagingSenderId: '792157443286',
     projectId: 'flipifly-9df88',
     storageBucket: 'flipifly-9df88.firebasestorage.app',
@@ -66,10 +60,34 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD9rsFMtivPP5yYQ4W1s2MQFAFLCKPIOtY',
-    appId: '1:792157443286:ios:d2d292b5c1e4cea5fce577',
+    appId: '1:792157443286:ios:14fe9cf9369598b7fce577',
     messagingSenderId: '792157443286',
     projectId: 'flipifly-9df88',
     storageBucket: 'flipifly-9df88.firebasestorage.app',
-    iosBundleId: 'com.example.flipifly',
+    androidClientId: '792157443286-3u7cn30stqis39qnm33bho99vfram2ud.apps.googleusercontent.com',
+    iosClientId: '792157443286-d4i1imf03lj1suug4obec24j1hkruav3.apps.googleusercontent.com',
+    iosBundleId: 'com.example.webkit',
   );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyD9rsFMtivPP5yYQ4W1s2MQFAFLCKPIOtY',
+    appId: '1:792157443286:ios:14fe9cf9369598b7fce577',
+    messagingSenderId: '792157443286',
+    projectId: 'flipifly-9df88',
+    storageBucket: 'flipifly-9df88.firebasestorage.app',
+    androidClientId: '792157443286-3u7cn30stqis39qnm33bho99vfram2ud.apps.googleusercontent.com',
+    iosClientId: '792157443286-d4i1imf03lj1suug4obec24j1hkruav3.apps.googleusercontent.com',
+    iosBundleId: 'com.example.webkit',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyBz3H-rpXB-YdODRqJV_Ny10ufpuSlVOkM',
+    appId: '1:792157443286:web:e8a6962123509873fce577',
+    messagingSenderId: '792157443286',
+    projectId: 'flipifly-9df88',
+    authDomain: 'flipifly-9df88.firebaseapp.com',
+    storageBucket: 'flipifly-9df88.firebasestorage.app',
+    measurementId: 'G-G2QJR87S49',
+  );
+
 }

@@ -80,11 +80,19 @@ class _LeftBarState extends State<LeftBar> with SingleTickerProviderStateMixin, 
                       onTap: () {
                         Get.toNamed('/contacts/members');
                       },
-                      child: Image.asset(
-                        Images.logoIcon,
-                        height: widget.isCondensed ? 24 : 32,
-                        color: contentTheme.primary,
-                      )),
+                   child: Image.asset(
+                      Images.logoIcon,
+                      height: widget.isCondensed ? 24 : 32,
+                      color: contentTheme.primary,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          LucideIcons.zap, // or any icon that represents your brand
+                          size: widget.isCondensed ? 24 : 32,
+                          color: contentTheme.primary,
+                        );
+                      },
+                    ),
+                  ),
                   if (!widget.isCondensed)
                     Flexible(
                       fit: FlexFit.loose,

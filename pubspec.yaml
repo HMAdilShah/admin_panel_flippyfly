@@ -46,6 +46,8 @@ dependencies:
   flutter_blurhash: ^0.8.2
   feather_icons: ^1.2.0
   url_strategy: ^0.3.0
+  cloud_functions:
+  firebase_messaging:
   intl:
   flutter_colorpicker: ^1.1.0
   flutter_pagination: ^0.0.8
@@ -74,6 +76,7 @@ dependencies:
   firebase_auth: ^5.5.2
   firebase_storage: ^12.4.5
   flutter_stripe: ^11.5.0
+  googleapis_auth:
   image:
   lucide_icons:
   http:
