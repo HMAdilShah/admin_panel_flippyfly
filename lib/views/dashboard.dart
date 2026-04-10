@@ -398,6 +398,9 @@ class DashboardPage extends StatelessWidget {
               // ── SUPPORT TICKETS ──────────────────────────────────────────
               supportTicketsTable(contentTheme),
               MySpacing.height(gap),
+              // ── WITHDRAW REQUESTS ────────────────────────────────────────────────────
+              // withdrawRequestsTable(contentTheme),
+              // MySpacing.height(gap),
             ],
           ),
         );
@@ -633,6 +636,258 @@ class DashboardPage extends StatelessWidget {
         ],
       ),
     );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+// WITHDRAW REQUESTS TABLE
+// ─────────────────────────────────────────────────────────────────────────
+  Widget withdrawRequestsTable(ContentTheme contentTheme) {
+    return MyCard(
+      padding: MySpacing.all(16),
+      shadow: MyShadow(elevation: .6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.banknote, size: 18),
+              MySpacing.width(8),
+              MyText.titleMedium("Withdraw Requests", fontWeight: 600),
+            ],
+          ),
+          MySpacing.height(16),
+          Obx(() {
+            if (controller.withdrawRequests.isEmpty) {
+              return Center(
+                child: MyText.bodySmall("No withdrawal requests", muted: true),
+              );
+            }
+            return SizedBox(
+              height: 420,
+              child: Column(
+                children: [
+                  // ── Table Header ──
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: contentTheme.primary.withOpacity(.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                            flex: 2,
+                            child: MyText.bodySmall("User",
+                                fontWeight: 700)),
+                        Expanded(
+                            flex: 2,
+                            child: MyText.bodySmall("Email",
+                                fontWeight: 700)),
+                        Expanded(
+                            flex: 1,
+                            child: MyText.bodySmall("Amount",
+                                fontWeight: 700)),
+                        Expanded(
+                            flex: 1,
+                            child: MyText.bodySmall("Wallet",
+                                fontWeight: 700)),
+                        Expanded(
+                            flex: 2,
+                            child: MyText.bodySmall("Requested At",
+                                fontWeight: 700)),
+                        Expanded(
+                            flex: 2,
+                            child: MyText.bodySmall("Status",
+                                fontWeight: 700)),
+                        Expanded(
+                            flex: 2,
+                            child: MyText.bodySmall("Action",
+                                fontWeight: 700)),
+                      ],
+                    ),
+                  ),
+                  MySpacing.height(8),
+
+                  // ── Table Rows ──
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: controller.withdrawRequests.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final req = controller.withdrawRequests[index];
+                        final status = req['status'] ?? 'pending';
+                        final requestedAt = req['requested_at'] != null
+                            ? (req['requested_at'] as Timestamp).toDate()
+                            : null;
+
+                        Color statusColor;
+                        switch (status.toLowerCase()) {
+                          case 'approved':
+                            statusColor = Colors.green;
+                            break;
+                          case 'rejected':
+                            statusColor = Colors.red;
+                            break;
+                          default:
+                            statusColor = Colors.orange;
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 8),
+                          child: Row(
+                            children: [
+                              // User Name
+                              Expanded(
+                                flex: 2,
+                                child: MyText.bodyMedium(
+                                  req['user_name'] ?? '-',
+                                  fontWeight: 600,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              // Email
+                              Expanded(
+                                flex: 2,
+                                child: MyText.bodySmall(
+                                  req['user_email'] ?? '-',
+                                  muted: true,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              // Withdraw Amount
+                              Expanded(
+                                flex: 1,
+                                child: MyText.bodyMedium(
+                                  '${req['withdraw_amount'] ?? 0}',
+                                  fontWeight: 700,
+                                  color: contentTheme.primary,
+                                ),
+                              ),
+                              // Wallet Total
+                              Expanded(
+                                flex: 1,
+                                child: MyText.bodySmall(
+                                  '${req['wallet_total_amount'] ?? 0}',
+                                  muted: true,
+                                ),
+                              ),
+                              // Requested At
+                              Expanded(
+                                flex: 2,
+                                child: MyText.bodySmall(
+                                  requestedAt != null
+                                      ? "${requestedAt.day}/${requestedAt.month}/${requestedAt.year}"
+                                      : '-',
+                                  muted: true,
+                                ),
+                              ),
+                              // Status Badge
+                              Expanded(
+                                flex: 2,
+                                child: MyContainer(
+                                  padding: MySpacing.xy(10, 5),
+                                  borderRadiusAll: 12,
+                                  color: statusColor.withOpacity(.15),
+                                  child: MyText.bodySmall(
+                                    status.toUpperCase(),
+                                    color: statusColor,
+                                    fontWeight: 600,
+                                  ),
+                                ),
+                              ),
+                              // Action Buttons
+                              Expanded(
+                                flex: 2,
+                                child: status.toLowerCase() == 'pending'
+                                    ? Row(
+                                  children: [
+                                    // Approve
+                                    GestureDetector(
+                                      onTap: () =>
+                                          _updateWithdrawStatus(
+                                              req['id'], 'approved', index),
+                                      child: MyContainer(
+                                        padding:
+                                        MySpacing.xy(10, 5),
+                                        borderRadiusAll: 8,
+                                        color: Colors.green
+                                            .withOpacity(.15),
+                                        child: MyText.bodySmall(
+                                          "Approve",
+                                          color: Colors.green,
+                                          fontWeight: 600,
+                                        ),
+                                      ),
+                                    ),
+                                    MySpacing.width(6),
+                                    // Reject
+                                    GestureDetector(
+                                      onTap: () =>
+                                          _updateWithdrawStatus(
+                                              req['id'], 'rejected', index),
+                                      child: MyContainer(
+                                        padding:
+                                        MySpacing.xy(10, 5),
+                                        borderRadiusAll: 8,
+                                        color: Colors.red
+                                            .withOpacity(.15),
+                                        child: MyText.bodySmall(
+                                          "Reject",
+                                          color: Colors.red,
+                                          fontWeight: 600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                    : MyText.bodySmall(
+                                  "—",
+                                  muted: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+// ── Status updater ──────────────────────────────────────────────────────
+  Future<void> _updateWithdrawStatus(
+      String docId, String newStatus, int index) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('withdraw_requests')
+          .doc(docId)
+          .update({'status': newStatus});
+
+      // Update local list reactively
+      final updated =
+      Map<String, dynamic>.from(controller.withdrawRequests[index]);
+      updated['status'] = newStatus;
+      controller.withdrawRequests[index] = updated;
+
+      Get.snackbar(
+        newStatus == 'approved' ? 'Approved' : 'Rejected',
+        'Withdrawal request has been $newStatus.',
+        backgroundColor:
+        newStatus == 'approved' ? Colors.green : Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to update status.',
+          backgroundColor: Colors.red, colorText: Colors.white);
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────

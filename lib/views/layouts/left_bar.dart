@@ -321,6 +321,23 @@ class _LeftBarState extends State<LeftBar> with SingleTickerProviderStateMixin, 
                     route: '/contacts/support_tickets_screen',
                     isCondensed: isCondensed,
                   ),
+                  NavigationItem(
+                    iconData: LucideIcons.banknote,
+                    title: "Withdraw Requests",
+                    isCondensed: isCondensed,
+                    route: '/contacts/withdraw_requests',
+                  ),
+                  NavigationItem(
+                    iconData: LucideIcons.chart_bar,
+                    title: "Reports",
+                    isCondensed: isCondensed,
+                    route: '/contacts/reports',
+                  ),
+                  // NavigationItem(
+                  //   iconData: LucideIcons.square_kanban,
+                  //   title: "Bulk Email",
+                  //   route: '/contacts/bulk_email',
+                  // ),
                   //
                   // //-----------------NFT Dashboard-----------------//
                   // NavigationItem(

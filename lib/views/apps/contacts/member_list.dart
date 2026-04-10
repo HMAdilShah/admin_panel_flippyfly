@@ -9,6 +9,10 @@ import 'package:webkit/models/app_user.dart';
 import 'package:webkit/views/layouts/layout.dart';
 import 'package:webkit/helpers/widgets/my_button.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MemberList
+// ─────────────────────────────────────────────────────────────────────────────
+
 class MemberList extends StatefulWidget {
   const MemberList({super.key});
 
@@ -17,10 +21,10 @@ class MemberList extends StatefulWidget {
 }
 
 class _MemberListState extends State<MemberList> {
-  final Color primary = const Color(0xFF835FFF);
+  final Color primary    = const Color(0xFF835FFF);
   final Color background = const Color(0xFFEFF1FE);
   final Color accentPink = const Color(0xFFF71E64);
-  final Color darkText = const Color(0xFF222222);
+  final Color darkText   = const Color(0xFF222222);
 
   final MemberListController controller = Get.put(MemberListController());
 
@@ -30,9 +34,11 @@ class _MemberListState extends State<MemberList> {
   List<AppUserModel> _filter(List<AppUserModel> list) {
     if (_searchQuery.trim().isEmpty) return list;
     final q = _searchQuery.toLowerCase();
-    return list.where((u) {
-      return (u.name.toLowerCase().contains(q) || u.phone.toLowerCase().contains(q));
-    }).toList();
+    return list
+        .where((u) =>
+    u.name.toLowerCase().contains(q) ||
+        u.phone.toLowerCase().contains(q))
+        .toList();
   }
 
   @override
@@ -44,13 +50,14 @@ class _MemberListState extends State<MemberList> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // ── Header ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   Expanded(
-                    child: MyText.titleLarge("User Management", fontWeight: 700, color: darkText),
+                    child: MyText.titleLarge("User Management",
+                        fontWeight: 700, color: darkText),
                   ),
                   MyButton(
                     onPressed: () => controller.goToDashboard(),
@@ -68,7 +75,7 @@ class _MemberListState extends State<MemberList> {
             ),
             MySpacing.height(18),
 
-            // Search / actions row
+            // ── Search / actions row ─────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -84,7 +91,8 @@ class _MemberListState extends State<MemberList> {
                           prefixIcon: const Icon(Icons.search),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding:
+                          const EdgeInsets.symmetric(vertical: 12),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -97,8 +105,10 @@ class _MemberListState extends State<MemberList> {
                   ElevatedButton.icon(
                     onPressed: () {
                       FirebaseFirestore.instance.collection('users').add({
-                        'name': 'Demo User ${DateTime.now().millisecondsSinceEpoch % 1000}',
-                        'email': 'demo${DateTime.now().millisecondsSinceEpoch % 1000}@example.com',
+                        'name':
+                        'Demo User ${DateTime.now().millisecondsSinceEpoch % 1000}',
+                        'email':
+                        'demo${DateTime.now().millisecondsSinceEpoch % 1000}@example.com',
                         'phone': '+92 300 000 0000',
                         'avatar_url': '',
                         'country': 'PK',
@@ -111,32 +121,18 @@ class _MemberListState extends State<MemberList> {
                     label: const Text("Add User"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
-                /*  ElevatedButton.icon(
-                    onPressed: () async {
-                      // Call function to create dummy plans for all users
-                      await _createDummyPlans();
-                    },
-                    icon: const Icon(Icons.add_chart),
-                    label: const Text("Create Dummy Plans"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),*/
-
                 ],
               ),
             ),
-
             MySpacing.height(18),
 
-            // Users list
-            // Users list
+            // ── Users list ───────────────────────────────────────────────────
             Obx(() {
               if (controller.loading.value) {
                 return const Center(child: CircularProgressIndicator());
@@ -144,31 +140,38 @@ class _MemberListState extends State<MemberList> {
 
               final filtered = _filter(controller.users);
               if (filtered.isEmpty) {
-                return Center(child: MyText.bodyMedium("No users match your search."));
+                return Center(
+                    child: MyText.bodyMedium("No users match your search."));
               }
 
               return ListView.separated(
-                physics: const NeverScrollableScrollPhysics(), // disable inner scrolling
-                shrinkWrap: true, // allow it to take only as much height as needed
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 itemCount: filtered.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, idx) {
-                  final user = filtered[idx];
+                  final user   = filtered[idx];
                   final serial = idx + 1;
                   return GestureDetector(
-                    onTap: () => Get.to(() => ProfileViewPage(userId: user.id),
+                    onTap: () => Get.to(
+                          () => ProfileViewPage(userId: user.id),
                       preventDuplicates: true,
                     ),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 6))],
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6))
+                        ],
                         border: Border.all(color: const Color(0xFFF0EEFF)),
                       ),
                       padding: const EdgeInsets.all(14),
-
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -176,10 +179,9 @@ class _MemberListState extends State<MemberList> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6))
                           ],
                         ),
                         child: Row(
@@ -194,168 +196,187 @@ class _MemberListState extends State<MemberList> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Center(
-                                child: MyText.bodyMedium("#$serial", color: primary, fontWeight: 700),
+                                child: MyText.bodyMedium("#$serial",
+                                    color: primary, fontWeight: 700),
                               ),
                             ),
                             MySpacing.width(16),
-
                             // Avatar
                             CircleAvatar(
                               radius: 30,
                               backgroundColor: Colors.grey[200],
-                              backgroundImage: user.avatarUrl.isNotEmpty ? NetworkImage(user.avatarUrl) : null,
+                              backgroundImage: user.avatarUrl.isNotEmpty
+                                  ? NetworkImage(user.avatarUrl)
+                                  : null,
                               child: user.avatarUrl.isEmpty
-                                  ? const Icon(Icons.person, size: 28, color: Colors.white)
+                                  ? const Icon(Icons.person,
+                                  size: 28, color: Colors.white)
                                   : null,
                             ),
                             MySpacing.width(16),
-
-                            // Info Column
+                            // Info
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Name
                                   Row(
                                     children: [
-                                      MyText.bodyMedium(user.name, fontWeight: 700, color: darkText),
+                                      MyText.bodyMedium(user.name,
+                                          fontWeight: 700, color: darkText),
                                       MySpacing.width(6),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 2, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: (user.userStatus.toLowerCase() == 'blocked' ? Colors.red : Colors.green).withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(20),
+                                          color: (user.userStatus
+                                              .toLowerCase() ==
+                                              'blocked'
+                                              ? Colors.red
+                                              : Colors.green)
+                                              .withOpacity(0.15),
+                                          borderRadius:
+                                          BorderRadius.circular(20),
                                         ),
                                         child: MyText.bodySmall(
-                                          user.userStatus.isEmpty ? 'Active' : user.userStatus,
-                                          color: user.userStatus.toLowerCase() == 'blocked' ? Colors.red : Colors.green[800],
+                                          user.userStatus.isEmpty
+                                              ? 'Active'
+                                              : user.userStatus,
+                                          color: user.userStatus.toLowerCase() ==
+                                              'blocked'
+                                              ? Colors.red
+                                              : Colors.green[800],
                                           fontWeight: 600,
                                         ),
                                       ),
                                     ],
                                   ),
-
-
-                                  // Email
-                                  Text(user.email, style: const TextStyle(color: Colors.black54), overflow: TextOverflow.ellipsis),
+                                  Text(user.email,
+                                      style: const TextStyle(
+                                          color: Colors.black54),
+                                      overflow: TextOverflow.ellipsis),
                                   MySpacing.height(6),
-
-                                  // Phone with icon
                                   Row(
                                     children: [
-                                      const Icon(Icons.phone, size: 16, color: Colors.green),
+                                      const Icon(Icons.phone,
+                                          size: 16, color: Colors.green),
                                       MySpacing.width(6),
-                                      Text(user.phone, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                                      Text(user.phone,
+                                          style: const TextStyle(
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.w600)),
                                     ],
                                   ),
                                 ],
                               ),
                             ),
-
-                            // Status + Buttons Column
+                            // Action buttons
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // View Button
                                 MyButton(
-                                  onPressed: () => Get.to(() => ProfileViewPage(userId: user.id),
-                                    preventDuplicates: true,),
+                                  onPressed: () => Get.to(
+                                        () => ProfileViewPage(userId: user.id),
+                                    preventDuplicates: true,
+                                  ),
                                   backgroundColor: primary.withOpacity(0.15),
                                   borderRadiusAll: 12,
                                   padding: MySpacing.xy(14, 10),
-                                  child: MyText.bodySmall("View", color: primary, fontWeight: 700),
+                                  child: MyText.bodySmall("View",
+                                      color: primary, fontWeight: 700),
                                 ),
                                 MySpacing.height(6),
-
-                                // Block Button
-// Block / Unblock toggle button
                                 MyButton(
                                   onPressed: () async {
-                                    final isBlocked = user.userStatus.toLowerCase() == 'blocked';
-                                    final action = isBlocked ? 'Unblock' : 'Block';
-
+                                    final isBlocked = user.userStatus
+                                        .toLowerCase() ==
+                                        'blocked';
+                                    final action =
+                                    isBlocked ? 'Unblock' : 'Block';
                                     final confirm = await showDialog<bool>(
                                       context: context,
                                       builder: (c) => AlertDialog(
                                         shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12)),
-                                        title: MyText.titleMedium("Confirm", fontWeight: 700),
-                                        content: MyText.bodyMedium("$action ${user.name}?"),
+                                            borderRadius:
+                                            BorderRadius.circular(12)),
+                                        title: MyText.titleMedium("Confirm",
+                                            fontWeight: 700),
+                                        content: MyText.bodyMedium(
+                                            "$action ${user.name}?"),
                                         actions: [
                                           TextButton(
-                                              onPressed: () => Navigator.pop(c, false),
+                                              onPressed: () =>
+                                                  Navigator.pop(c, false),
                                               child: const Text("Cancel")),
                                           TextButton(
-                                              onPressed: () => Navigator.pop(c, true),
+                                              onPressed: () =>
+                                                  Navigator.pop(c, true),
                                               child: Text(action)),
                                         ],
                                       ),
                                     );
-
                                     if (!mounted) return;
-                                    if (confirm == true) controller.toggleUserStatus(user);
+                                    if (confirm == true)
+                                      controller.toggleUserStatus(user);
                                   },
-                                  backgroundColor: user.userStatus.toLowerCase() == 'blocked'
-                                      ? Colors.green.withOpacity(0.15)   // green tint when blocked
-                                      : accentPink.withOpacity(0.15),    // pink tint when active
+                                  backgroundColor:
+                                  user.userStatus.toLowerCase() ==
+                                      'blocked'
+                                      ? Colors.green.withOpacity(0.15)
+                                      : accentPink.withOpacity(0.15),
                                   borderRadiusAll: 12,
                                   padding: MySpacing.xy(14, 10),
                                   child: MyText.bodySmall(
-                                    user.userStatus.toLowerCase() == 'blocked' ? "Unblock" : "Block",
-                                    color: user.userStatus.toLowerCase() == 'blocked'
+                                    user.userStatus.toLowerCase() == 'blocked'
+                                        ? "Unblock"
+                                        : "Block",
+                                    color:
+                                    user.userStatus.toLowerCase() ==
+                                        'blocked'
                                         ? Colors.green[700]
                                         : accentPink,
                                     fontWeight: 700,
                                   ),
-                                ),                              ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-
                     ),
                   );
                 },
               );
             }),
-
-
-
           ],
         ),
       ),
     );
   }
-  Future<void> _createDummyPlans() async {
-    final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
 
+  Future<void> _createDummyPlans() async {
+    final usersSnapshot =
+    await FirebaseFirestore.instance.collection('users').get();
     for (var userDoc in usersSnapshot.docs) {
       final userId = userDoc.id;
-
-      // Generate 2-3 dummy plans per user
       for (int i = 1; i <= 3; i++) {
-        final now = DateTime.now();
+        final now  = DateTime.now();
         final plan = UserPlan(
-          id: '', // Firestore will generate ID
+          id: '',
           name: "Plan $i",
           amount: (i * 1000).toDouble(),
           paymentStatus: i % 2 == 0 ? 'paid' : 'pending',
           purchaseDate: now.subtract(Duration(days: i * 10)),
           expiryDate: now.add(Duration(days: i * 30)),
         );
-
-        // Add to subcollection 'purchases' for each user
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
             .collection('purchases')
             .add(plan.toMap());
-        if (!mounted) return; // <-- add after await
-
+        if (!mounted) return;
       }
     }
-
     Get.snackbar(
       "Success",
       "Dummy plans created for all users",
@@ -364,8 +385,11 @@ class _MemberListState extends State<MemberList> {
       colorText: Colors.white,
     );
   }
-
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProfileViewPage
+// ─────────────────────────────────────────────────────────────────────────────
 
 class ProfileViewPage extends StatefulWidget {
   final String userId;
@@ -378,9 +402,9 @@ class ProfileViewPage extends StatefulWidget {
 class _ProfileViewPageState extends State<ProfileViewPage> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  final Color primary = const Color(0xFF835FFF);
+  final Color primary    = const Color(0xFF835FFF);
   final Color background = const Color(0xFFEFF1FE);
-  final Color darkText = const Color(0xFF222222);
+  final Color darkText   = const Color(0xFF222222);
 
   Map<String, dynamic>? userData;
   List<UserPaymentPlan> plans = [];
@@ -396,9 +420,9 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
     if (!mounted) return;
     setState(() => loading = true);
 
-    final userDoc = await _db.collection('users').doc(widget.userId).get();
+    final userDoc =
+    await _db.collection('users').doc(widget.userId).get();
     if (!mounted) return;
-
     if (!userDoc.exists) {
       setState(() => loading = false);
       return;
@@ -411,12 +435,9 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
         .where('user_id', isEqualTo: widget.userId)
         .orderBy('created_at', descending: true)
         .get();
-
     if (!mounted) return;
 
     plans = snap.docs.map(UserPaymentPlan.fromDoc).toList();
-
-    if (!mounted) return;
     setState(() => loading = false);
   }
 
@@ -427,6 +448,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       appBar: AppBar(
         title: Text("${userData?['name'] ?? 'User'} Profile"),
         backgroundColor: primary,
+        foregroundColor: Colors.white,
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
@@ -452,7 +474,10 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 12)
+        ],
       ),
       child: Row(
         children: [
@@ -466,9 +491,12 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MyText.titleLarge(userData?['name'] ?? '-', fontWeight: 700),
-                MyText.bodySmall(userData?['email'] ?? '-', color: Colors.black54),
-                MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}", color: Colors.black54),
+                MyText.titleLarge(userData?['name'] ?? '-',
+                    fontWeight: 700),
+                MyText.bodySmall(userData?['email'] ?? '-',
+                    color: Colors.black54),
+                MyText.bodySmall("Phone: ${userData?['phone'] ?? '-'}",
+                    color: Colors.black54),
               ],
             ),
           ),
@@ -480,68 +508,88 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
   Widget _emptyPlans() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-      child: MyText.bodyMedium("No plans created by this user.", color: Colors.black54),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: MyText.bodyMedium("No plans created by this user.",
+          color: Colors.black54),
     );
   }
+
+  // ── FIX: GestureDetector correctly wraps each card inside the Wrap ─────────
   Widget _plansGrid() {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
       children: plans.map((p) {
-        return SizedBox(
-          width: (MediaQuery.of(context).size.width - 56) / 2, // two cards per row with spacing
-          child: _planCard(p),
+        return GestureDetector(
+          onTap: () => Get.to(
+                () => PlanDetailPage(plan: p),
+            preventDuplicates: true,
+          ),
+          child: SizedBox(
+            width: (MediaQuery.of(context).size.width - 56) / 2,
+            child: _planCard(p),
+          ),
         );
       }).toList(),
     );
   }
 
-
   Widget _planCard(UserPaymentPlan p) {
     final statusColor = p.availableAmount > 0 ? Colors.green : Colors.orange;
-    final statusText = p.availableAmount > 0 ? "Active" : "Expired";
+    final statusText  = p.availableAmount > 0 ? "Active" : "Expired";
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 10)
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // important: shrink to fit content
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Plan Name
           MyText.bodyMedium(p.planId, fontWeight: 700, color: darkText),
           const SizedBox(height: 6),
-
-          // Amount & Months
-          MyText.bodySmall("Total Flipis: ${p.totalFlipis}", fontWeight: 600),
+          MyText.bodySmall("Total Flipis: ${p.totalFlipis}",
+              fontWeight: 600),
           MyText.bodySmall("Available: ${p.availableAmount}"),
           MyText.bodySmall("Duration: ${p.totalMonths} months"),
           const SizedBox(height: 6),
-
-          // Status badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: MyText.bodySmall(statusText, color: statusColor, fontWeight: 600),
+            child: MyText.bodySmall(statusText,
+                color: statusColor, fontWeight: 600),
           ),
-
           const SizedBox(height: 6),
-
-          // Date
-          Align(
-            alignment: Alignment.bottomRight,
-            child: MyText.bodySmall(
-              p.formattedDateTime,
-              color: Colors.black45,
-            ),
+          // "Tap to view payments" hint
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Align(
+                alignment: Alignment.bottomRight,
+                child: MyText.bodySmall(p.formattedDateTime,
+                    color: Colors.black45),
+              ),
+              Row(
+                children: [
+                  Icon(Icons.receipt_long,
+                      size: 13, color: primary.withOpacity(0.6)),
+                  const SizedBox(width: 3),
+                  MyText.bodySmall("Payments",
+                      color: primary.withOpacity(0.7), fontWeight: 600),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -549,6 +597,403 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PlanDetailPage
+// ─────────────────────────────────────────────────────────────────────────────
+
+class PlanDetailPage extends StatefulWidget {
+  final UserPaymentPlan plan;
+  const PlanDetailPage({super.key, required this.plan});
+
+  @override
+  State<PlanDetailPage> createState() => _PlanDetailPageState();
+}
+
+class _PlanDetailPageState extends State<PlanDetailPage> {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  final Color primary    = const Color(0xFF835FFF);
+  final Color background = const Color(0xFFEFF1FE);
+  final Color darkText   = const Color(0xFF222222);
+  final Color accentPink = const Color(0xFFF71E64);
+
+  List<PaymentRecord> _records = [];
+  bool   _loading   = true;
+  double _totalPaid = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPayments();
+  }
+
+  Future<void> _loadPayments() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    // Subcollection under the users_plan doc.
+    // Switch to Option B if you use a top-level collection instead.
+    final snap = await _db
+        .collection('users_plan')
+        .doc(widget.plan.docId)
+        .collection('payments')
+        .orderBy('payment_date', descending: true)
+        .get();
+
+    // Option B — top-level collection:
+    // final snap = await _db
+    //     .collection('plan_payments')
+    //     .where('plan_doc_id', isEqualTo: widget.plan.docId)
+    //     .orderBy('payment_date', descending: true)
+    //     .get();
+
+    if (!mounted) return;
+
+    _records   = snap.docs.map(PaymentRecord.fromDoc).toList();
+    _totalPaid = _records
+        .where((r) => r.status.toLowerCase() == 'paid')
+        .fold(0.0, (sum, r) => sum + r.amount);
+
+    setState(() => _loading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: background,
+      appBar: AppBar(
+        title: Text("${widget.plan.planId} — Payments"),
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _planSummaryCard(),
+            const SizedBox(height: 20),
+            _sectionTitle("Payment Records"),
+            const SizedBox(height: 12),
+            _records.isEmpty ? _emptyState() : _recordsList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Plan summary card ──────────────────────────────────────────────────────
+
+  Widget _planSummaryCard() {
+    final total    = widget.plan.totalFlipis.toDouble();
+    final progress =
+    total > 0 ? (_totalPaid / total).clamp(0.0, 1.0) : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 6))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Name + status badge
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.plan.planId,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: darkText),
+                ),
+              ),
+              _statusBadge(
+                widget.plan.availableAmount > 0 ? 'Active' : 'Expired',
+                widget.plan.availableAmount > 0
+                    ? Colors.green
+                    : Colors.orange,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Stat chips
+          Row(
+            children: [
+              _statChip("Total Flipis", "${widget.plan.totalFlipis}",
+                  primary.withOpacity(0.12), primary),
+              const SizedBox(width: 10),
+              _statChip(
+                  "Available",
+                  "${widget.plan.availableAmount}",
+                  Colors.green.withOpacity(0.12),
+                  Colors.green[700]!),
+              const SizedBox(width: 10),
+              _statChip("Months", "${widget.plan.totalMonths}",
+                  Colors.orange.withOpacity(0.12), Colors.orange[800]!),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Total paid row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Total Paid",
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500)),
+              Text(
+                "PKR ${_totalPaid.toStringAsFixed(0)}",
+                style: TextStyle(
+                    color: primary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(primary),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "${(progress * 100).toStringAsFixed(0)}% of total Flipis paid",
+            style: const TextStyle(color: Colors.black45, fontSize: 12),
+          ),
+
+          if (widget.plan.formattedDateTime.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Created: ${widget.plan.formattedDateTime}",
+              style:
+              const TextStyle(color: Colors.black38, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Records list ───────────────────────────────────────────────────────────
+
+  Widget _recordsList() {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemCount: _records.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) => _recordCard(_records[i], i + 1),
+    );
+  }
+
+  Widget _recordCard(PaymentRecord r, int serial) {
+    final isPaid   = r.status.toLowerCase() == 'paid';
+    final isFailed = r.status.toLowerCase() == 'failed';
+    final statusColor =
+    isPaid ? Colors.green : isFailed ? Colors.red : Colors.orange;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: statusColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Serial bubble
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              "#$serial",
+              style: TextStyle(
+                  color: primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Amount + status
+                Row(
+                  children: [
+                    Text(
+                      "PKR ${r.amount.toStringAsFixed(0)}",
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: darkText),
+                    ),
+                    const SizedBox(width: 8),
+                    _statusBadge(
+                        r.status.isEmpty ? 'pending' : r.status,
+                        statusColor),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // Date
+                if (r.formattedDate.isNotEmpty || r.paymentDate != null)
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today,
+                          size: 13, color: Colors.black38),
+                      const SizedBox(width: 4),
+                      Text(
+                        r.formattedDate.isNotEmpty
+                            ? r.formattedDate
+                            : _fmt(r.paymentDate!),
+                        style: const TextStyle(
+                            color: Colors.black45, fontSize: 12),
+                      ),
+                    ],
+                  ),
+
+                // Method
+                if (r.method.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.account_balance_wallet_outlined,
+                          size: 13, color: Colors.black38),
+                      const SizedBox(width: 4),
+                      Text(r.method,
+                          style: const TextStyle(
+                              color: Colors.black54, fontSize: 12)),
+                    ],
+                  ),
+                ],
+
+                // Note
+                if (r.note.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(r.note,
+                        style: const TextStyle(
+                            color: Colors.black54, fontSize: 12)),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  Widget _sectionTitle(String title) => Text(
+    title,
+    style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: darkText),
+  );
+
+  Widget _emptyState() => Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12)),
+    child: const Center(
+      child: Text("No payment records found for this plan.",
+          style: TextStyle(color: Colors.black45)),
+    ),
+  );
+
+  Widget _statusBadge(String label, Color color) => Container(
+    padding:
+    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.12),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600),
+    ),
+  );
+
+  Widget _statChip(
+      String label, String value, Color bg, Color fg) =>
+      Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+              color: bg, borderRadius: BorderRadius.circular(10)),
+          child: Column(
+            children: [
+              Text(value,
+                  style: TextStyle(
+                      color: fg,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15)),
+              const SizedBox(height: 2),
+              Text(label,
+                  style: const TextStyle(
+                      color: Colors.black45, fontSize: 11)),
+            ],
+          ),
+        ),
+      );
+
+  String _fmt(DateTime d) =>
+      "${d.day.toString().padLeft(2, '0')}/"
+          "${d.month.toString().padLeft(2, '0')}/"
+          "${d.year}";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────────────────────
 
 class UserPlan {
   final String id;
@@ -573,22 +1018,26 @@ class UserPlan {
       name: map['plan_name'] ?? 'Unnamed Plan',
       amount: (map['amount'] ?? 0).toDouble(),
       paymentStatus: map['payment_status'] ?? 'pending',
-      purchaseDate: map['purchase_date'] != null ? (map['purchase_date'] as Timestamp).toDate() : null,
-      expiryDate: map['expiry_date'] != null ? (map['expiry_date'] as Timestamp).toDate() : null,
+      purchaseDate: map['purchase_date'] != null
+          ? (map['purchase_date'] as Timestamp).toDate()
+          : null,
+      expiryDate: map['expiry_date'] != null
+          ? (map['expiry_date'] as Timestamp).toDate()
+          : null,
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'plan_name': name,
-      'amount': amount,
-      'payment_status': paymentStatus,
-      'purchase_date': purchaseDate != null ? Timestamp.fromDate(purchaseDate!) : null,
-      'expiry_date': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+    'plan_name': name,
+    'amount': amount,
+    'payment_status': paymentStatus,
+    'purchase_date': purchaseDate != null
+        ? Timestamp.fromDate(purchaseDate!)
+        : null,
+    'expiry_date':
+    expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
+  };
 }
-
 
 class UserPaymentPlan {
   final String docId;
@@ -631,3 +1080,37 @@ class UserPaymentPlan {
   }
 }
 
+class PaymentRecord {
+  final String docId;
+  final double amount;
+  final String status;   // 'paid' | 'pending' | 'failed'
+  final String method;   // 'cash' | 'bank_transfer' | 'easypaisa' …
+  final String note;
+  final DateTime? paymentDate;
+  final String formattedDate;
+
+  PaymentRecord({
+    required this.docId,
+    required this.amount,
+    required this.status,
+    required this.method,
+    required this.note,
+    this.paymentDate,
+    required this.formattedDate,
+  });
+
+  factory PaymentRecord.fromDoc(DocumentSnapshot doc) {
+    final m = doc.data() as Map<String, dynamic>;
+    return PaymentRecord(
+      docId: doc.id,
+      amount: (m['amount'] ?? 0).toDouble(),
+      status: m['status'] ?? 'pending',
+      method: m['payment_method'] ?? '',
+      note: m['note'] ?? '',
+      paymentDate: m['payment_date'] != null
+          ? (m['payment_date'] as Timestamp).toDate()
+          : null,
+      formattedDate: m['formatted_date'] ?? '',
+    );
+  }
+}

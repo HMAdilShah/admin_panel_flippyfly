@@ -5,6 +5,7 @@ import 'package:webkit/views/apps/CRM/opportunities.dart';
 import 'package:webkit/views/apps/calender.dart';
 import 'package:webkit/views/apps/chat_page.dart';
 import 'package:webkit/views/apps/contacts/banner_management.dart';
+import 'package:webkit/views/apps/contacts/bulk_email_screen.dart';
 import 'package:webkit/views/apps/contacts/create_plan_screen.dart';
 import 'package:webkit/views/apps/contacts/edit_profile.dart';
 import 'package:webkit/views/apps/contacts/how_it_works.dart';
@@ -14,7 +15,9 @@ import 'package:webkit/views/apps/contacts/plans_overview.dart';
 import 'package:webkit/views/apps/contacts/post.dart';
 import 'package:webkit/views/apps/contacts/profile.dart';
 import 'package:webkit/views/apps/contacts/push_notification_screen.dart';
+import 'package:webkit/views/apps/contacts/report_screen.dart';
 import 'package:webkit/views/apps/contacts/support_tickets_screen.dart';
+import 'package:webkit/views/apps/contacts/withdraw_request.dart';
 import 'package:webkit/views/apps/ecommerce/add_product.dart';
 import 'package:webkit/views/apps/ecommerce/customers.dart';
 import 'package:webkit/views/apps/ecommerce/invoice_page.dart';
@@ -94,7 +97,14 @@ getPageRoute() {
         name: '/pricing',
         page: () => Pricing(),
         middlewares: [AuthMiddleware()]),
-
+    GetPage(
+        name: '/contacts/withdraw_requests',
+        page: () => WithdrawRequestsScreen(),
+        middlewares: [AuthMiddleware()]),
+    GetPage(
+        name: '/contacts/reports',
+        page: () => ReportsScreen(),
+        middlewares: [AuthMiddleware()]),
     GetPage(
         name: '/starter',
         page: () => Starter(),
@@ -171,6 +181,10 @@ getPageRoute() {
         page: () => MailBoxScreen(),
         middlewares: [AuthMiddleware()]),
 
+    GetPage(
+        name: '/contacts/bulk_email',
+        page: () => BulkEmailScreen(),
+        middlewares: [AuthMiddleware()]),
     ///---------------- KanBan ----------------///
 
     GetPage(
