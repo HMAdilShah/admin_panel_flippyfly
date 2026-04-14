@@ -516,6 +516,7 @@ class DashboardController extends GetxController {
         'paymentMethod': d['payment_method'] ?? 'unknown',
         'transactionId': d['transaction_id'] ?? '',
         'date': d['date'],
+
         'expiryDate': d['expiry_date'],
       });
     }
