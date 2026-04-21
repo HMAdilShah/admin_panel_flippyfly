@@ -513,13 +513,13 @@ class DashboardPage extends StatelessWidget {
                       subtitle: Row(
                         children: [
                           MyText.bodySmall(
-                            "Received: \$${u['completed'].toStringAsFixed(2)}",
+                            "Received: QAR ${u['completed'].toStringAsFixed(2)}",
                             color: Colors.green,
                             fontWeight: 600,
                           ),
                           MySpacing.width(16),
                           MyText.bodySmall(
-                            "Pending: \$${u['pending'].toStringAsFixed(2)}",
+                            "Pending: QAR ${u['pending'].toStringAsFixed(2)}",
                             color: Colors.orange,
                             fontWeight: 600,
                           ),
@@ -535,7 +535,7 @@ class DashboardPage extends StatelessWidget {
                         subtitle: MyText.bodySmall(
                             "Status: ${tx['status']}"),
                         trailing: MyText.bodySmall(
-                          "\$${tx['amount'].toStringAsFixed(2)}",
+                          "QAR ${tx['amount'].toStringAsFixed(2)}",
                           color: tx['status'] == 'completed'
                               ? Colors.green
                               : Colors.orange,
@@ -599,12 +599,12 @@ class DashboardPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           MyText.bodySmall(
-                            "Paid: \$${(l['totalPaid'] ?? 0).toStringAsFixed(2)}",
+                            "Paid: QAR ${(l['totalPaid'] ?? 0).toStringAsFixed(2)}",
                             color: Colors.green,
                             fontWeight: 600,
                           ),
                           MyText.bodySmall(
-                            "Pending: \$${(l['pending'] ?? 0).toStringAsFixed(2)}",
+                            "Pending: QAR ${(l['pending'] ?? 0).toStringAsFixed(2)}",
                             color: Colors.orange,
                             fontWeight: 600,
                           ),
@@ -619,7 +619,7 @@ class DashboardPage extends StatelessWidget {
                         subtitle: MyText.bodySmall(
                             "Status: ${tx['status']}"),
                         trailing: MyText.bodySmall(
-                          "\$${(tx['amount'] ?? 0).toStringAsFixed(2)}",
+                          "QAR ${(tx['amount'] ?? 0).toStringAsFixed(2)}",
                           color: tx['status'] == 'completed'
                               ? Colors.green
                               : Colors.orange,
@@ -759,7 +759,7 @@ class DashboardPage extends StatelessWidget {
                               Expanded(
                                 flex: 1,
                                 child: MyText.bodyMedium(
-                                  '${req['withdraw_amount'] ?? 0}',
+                                  'QAR ${req['withdraw_amount'] ?? 0}',
                                   fontWeight: 700,
                                   color: contentTheme.primary,
                                 ),
@@ -768,7 +768,7 @@ class DashboardPage extends StatelessWidget {
                               Expanded(
                                 flex: 1,
                                 child: MyText.bodySmall(
-                                  '${req['wallet_total_amount'] ?? 0}',
+                                  'QAR ${req['wallet_total_amount'] ?? 0}',
                                   muted: true,
                                 ),
                               ),
@@ -1064,7 +1064,7 @@ class DashboardPage extends StatelessWidget {
                                       Expanded(
                                           flex: 1,
                                           child: MyText.bodySmall(
-                                              "\$$amount")),
+                                              "QAR $amount")),
                                     ],
                                   );
                                 },
