@@ -92,7 +92,7 @@ class AppTheme {
 
     /// Bottom AppBar Theme
     bottomAppBarTheme:
-        BottomAppBarTheme(color: Color(0xffeeeeee), elevation: 2),
+        BottomAppBarThemeData(color: Color(0xffeeeeee), elevation: 2),
 
     /// Tab bar Theme
     tabBarTheme: TabBarThemeData(
@@ -186,7 +186,7 @@ class AppTheme {
 
     /// Bottom AppBar Theme
     bottomAppBarTheme:
-        BottomAppBarTheme(color: Color(0xff464c52), elevation: 2),
+        BottomAppBarThemeData(color: Color(0xff464c52), elevation: 2),
 
     /// Tab bar Theme
     tabBarTheme: TabBarThemeData(
