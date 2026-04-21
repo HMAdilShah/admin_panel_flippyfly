@@ -13,6 +13,8 @@ import 'package:webkit/helpers/widgets/my_text.dart';
 import 'package:webkit/views/apps/dashboard/models/dashboard_controller.dart';
 import 'package:webkit/views/layouts/layout.dart';
 
+const String kCurrency = 'QAR';
+
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
@@ -96,8 +98,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: MyText.titleMedium("Filter by User",
-                  fontWeight: 600),
+              child: MyText.titleMedium("Filter by User", fontWeight: 600),
             ),
             const Divider(height: 1),
             Expanded(
@@ -111,8 +112,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     trailing: isSelected
                         ? Icon(
                       LucideIcons.check,
-                      color: AdminTheme
-                          .theme.contentTheme.primary,
+                      color: AdminTheme.theme.contentTheme.primary,
                     )
                         : null,
                     onTap: () {
@@ -156,10 +156,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 MyText.titleMedium("Revenue Reports",
                     fontSize: 22, fontWeight: 700),
-                MyBreadcrumb(children: [
-                  MyBreadcrumbItem(name: 'Dashboard', route: '/dashboard'),
-                  MyBreadcrumbItem(name: 'Reports', active: true),
-                ]),
+                // MyBreadcrumb(children: [
+                //   MyBreadcrumbItem(name: 'Dashboard', route: '/dashboard'),
+                //   MyBreadcrumbItem(name: 'Reports', active: true),
+                // ]),
               ],
             ),
             MySpacing.height(16),
@@ -185,8 +185,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     runSpacing: 8,
                     children: [
                       ...periodOptions.map((opt) {
-                        final isSelected =
-                            selectedPeriod == opt['key'];
+                        final isSelected = selectedPeriod == opt['key'];
                         return GestureDetector(
                           onTap: () => opt['key'] == 'custom'
                               ? _pickCustomRange()
@@ -196,8 +195,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             borderRadiusAll: 20,
                             color: isSelected
                                 ? contentTheme.primary
-                                : contentTheme.primary
-                                .withOpacity(.08),
+                                : contentTheme.primary.withOpacity(.08),
                             child: MyText.bodySmall(
                               opt['label']!,
                               color: isSelected
@@ -221,8 +219,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(LucideIcons.calendar,
-                                  size: 13,
-                                  color: contentTheme.success),
+                                  size: 13, color: contentTheme.success),
                               MySpacing.width(6),
                               MyText.bodySmall(
                                 "${customFrom!.day}/${customFrom!.month}/${customFrom!.year}  →  ${customTo!.day}/${customTo!.month}/${customTo!.year}",
@@ -368,7 +365,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Expanded(
                 child: _metricBox(
                   label: "Total Collected",
-                  value: "\$${total.toStringAsFixed(2)}",
+                  value: "QAR ${total.toStringAsFixed(2)}",
                   icon: LucideIcons.circle_dollar_sign,
                   color: color,
                   bgColor: color.withOpacity(.08),
@@ -380,7 +377,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: _metricBox(
                   label:
                   "MyFatoorah Fee (${DashboardController.myFatoorahFeePercent}%)",
-                  value: "- \$${fatoorahFee.toStringAsFixed(2)}",
+                  value: "- QAR ${fatoorahFee.toStringAsFixed(2)}",
                   icon: LucideIcons.circle_minus,
                   color: Colors.red,
                   bgColor: Colors.red.withOpacity(.06),
@@ -391,7 +388,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Expanded(
                 child: _metricBox(
                   label: "Our Profit",
-                  value: "\$${profit.toStringAsFixed(2)}",
+                  value: "QAR ${profit.toStringAsFixed(2)}",
                   icon: LucideIcons.trending_up,
                   color: Colors.green,
                   bgColor: Colors.green.withOpacity(.08),
@@ -476,42 +473,32 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           MySpacing.height(16),
           // Progress bar visualization
-          _summaryRow(
-              "Membership",
-              controller.membershipProfit.value,
-              grandProfit,
-              contentTheme.primary),
+          _summaryRow("Membership", controller.membershipProfit.value,
+              grandProfit, contentTheme.primary),
           MySpacing.height(10),
-          _summaryRow(
-              "Custom Plans",
-              controller.customProfit.value,
-              grandProfit,
-              contentTheme.info),
+          _summaryRow("Custom Plans", controller.customProfit.value,
+              grandProfit, contentTheme.info),
           MySpacing.height(10),
-          _summaryRow(
-              "Readymade Plans",
-              controller.readymadeProfit.value,
-              grandProfit,
-              contentTheme.success),
+          _summaryRow("Readymade Plans", controller.readymadeProfit.value,
+              grandProfit, contentTheme.success),
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              MyText.bodyMedium("Grand Total Collected",
-                  fontWeight: 600),
+              MyText.bodyMedium("Grand Total Collected", fontWeight: 600),
               MyText.bodyMedium(
-                  "\$${grandTotal.toStringAsFixed(2)}",
-                  fontWeight: 700),
+                "QAR ${grandTotal.toStringAsFixed(2)}",
+                fontWeight: 700,
+              ),
             ],
           ),
           MySpacing.height(6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              MyText.bodyMedium("Total MyFatoorah Fees",
-                  fontWeight: 600),
+              MyText.bodyMedium("Total MyFatoorah Fees", fontWeight: 600),
               MyText.bodyMedium(
-                "- \$${grandFee.toStringAsFixed(2)}",
+                "- QAR ${grandFee.toStringAsFixed(2)}",
                 fontWeight: 700,
                 color: Colors.red,
               ),
@@ -523,7 +510,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             children: [
               MyText.bodyMedium("Net Profit", fontWeight: 700),
               MyText.bodyMedium(
-                "\$${grandProfit.toStringAsFixed(2)}",
+                "QAR ${grandProfit.toStringAsFixed(2)}",
                 fontWeight: 700,
                 color: Colors.green,
               ),
@@ -545,7 +532,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             MyText.bodySmall(label, fontWeight: 600),
             MyText.bodySmall(
-              "\$${value.toStringAsFixed(2)}  (${(percent * 100).toStringAsFixed(1)}%)",
+              "QAR ${value.toStringAsFixed(2)}  (${(percent * 100).toStringAsFixed(1)}%)",
               fontWeight: 600,
               color: color,
             ),

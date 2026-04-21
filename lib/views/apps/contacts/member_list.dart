@@ -103,20 +103,8 @@ class _MemberListState extends State<MemberList> {
                   ),
                   MySpacing.width(12),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      FirebaseFirestore.instance.collection('users').add({
-                        'name':
-                        'Demo User ${DateTime.now().millisecondsSinceEpoch % 1000}',
-                        'email':
-                        'demo${DateTime.now().millisecondsSinceEpoch % 1000}@example.com',
-                        'phone': '+92 300 000 0000',
-                        'avatar_url': '',
-                        'country': 'PK',
-                        'user_status': 'active',
-                        'plan_name': '',
-                        'createdAt': FieldValue.serverTimestamp(),
-                      });
-                    },
+                    onPressed: () => _showAddUserDialog(context),  // ← change this line
+
                     icon: const Icon(Icons.person_add),
                     label: const Text("Add User"),
                     style: ElevatedButton.styleFrom(
@@ -856,7 +844,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 Row(
                   children: [
                     Text(
-                      "PKR ${r.amount.toStringAsFixed(0)}",
+                      "QAR ${r.amount.toStringAsFixed(2)}",
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -989,6 +977,141 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       "${d.day.toString().padLeft(2, '0')}/"
           "${d.month.toString().padLeft(2, '0')}/"
           "${d.year}";
+}
+void _showAddUserDialog(BuildContext context) {
+  final _nameCtrl    = TextEditingController();
+  final _emailCtrl   = TextEditingController();
+  final _phoneCtrl   = TextEditingController();
+  final _formKey     = GlobalKey<FormState>();
+  bool  _saving      = false;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setStateDialog) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.person_add, color: Colors.black, size: 22),
+            const SizedBox(width: 8),
+            Text("Add New User",
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: Colors.black)),
+          ],
+        ),
+        content: SizedBox(
+          width: 360,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Name
+                TextFormField(
+                  controller: _nameCtrl,
+                  decoration: InputDecoration(
+                    labelText: "Full Name *",
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 12),
+                  ),
+                  validator: (v) =>
+                  v == null || v.trim().isEmpty ? "Name is required" : null,
+                ),
+                const SizedBox(height: 14),
+                // Email
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: "Email *",
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 12),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return "Email is required";
+                    if (!v.contains('@')) return "Enter a valid email";
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+                // Phone
+                TextFormField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: "Phone",
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: _saving
+                ? null
+                : () async {
+              if (!_formKey.currentState!.validate()) return;
+              setStateDialog(() => _saving = true);
+
+              await FirebaseFirestore.instance.collection('users').add({
+                'name':        _nameCtrl.text.trim(),
+                'email':       _emailCtrl.text.trim(),
+                'phone':       _phoneCtrl.text.trim(),
+                'avatar_url':  '',
+                'country':     'PK',
+                'user_status': 'active',
+                'plan_name':   '',
+                'createdAt':   FieldValue.serverTimestamp(),
+              });
+
+              // if (!mounted) return;
+              Navigator.pop(ctx);
+              Get.snackbar(
+                "Success",
+                "User added successfully",
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.green.withOpacity(0.85),
+                colorText: Colors.white,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.lightBlueAccent,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: _saving
+                ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white))
+                : const Text("Add User",
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

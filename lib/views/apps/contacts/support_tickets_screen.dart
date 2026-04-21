@@ -20,19 +20,6 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
   String statusFilter = 'all';
   bool sortDescending = true;
 
-  void _createDummyTicket() async {
-    final ticketId = (Random().nextInt(90000) + 10000).toString();
-    await ticketsCollection.doc(ticketId).set({
-      'topic': 'Sample Issue',
-      'details': 'User cannot login to the app.',
-      'userEmail': 'user@example.com',
-      'userName': 'John Doe',
-      'userId': 'user123',
-      'status': 'in process',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-  }
-
   Color _getStatusColor(String status) {
     switch (status) {
       case 'resolved':
@@ -72,7 +59,8 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
               controller: _searchController,
               onChanged: (v) => setState(() => searchQuery = v.trim()),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF835FFF)),
+                prefixIcon:
+                const Icon(Icons.search, color: Color(0xFF835FFF)),
                 hintText: 'Search tickets...',
                 filled: true,
                 fillColor: Colors.white,
@@ -116,8 +104,8 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
 
                 final tickets = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-
-                  final topic = (data['topic'] ?? '').toString().toLowerCase();
+                  final topic =
+                  (data['topic'] ?? '').toString().toLowerCase();
                   final email =
                   (data['userEmail'] ?? '').toString().toLowerCase();
                   final status = (data['status'] ?? '').toString();
@@ -157,7 +145,8 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                 return GridView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: tickets.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
@@ -165,14 +154,15 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                   ),
                   itemBuilder: (context, index) {
                     final doc = tickets[index];
-                    final data = doc.data() as Map<String, dynamic>? ?? {};
+                    final data =
+                        doc.data() as Map<String, dynamic>? ?? {};
                     final status = data['status'] ?? 'in process';
                     final ticketNo = data['ticketNo'];
 
                     return InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: () =>
-                          Get.to(() => TicketDetailScreen(ticketId: doc.id)),
+                      onTap: () => Get.to(
+                              () => TicketDetailScreen(ticketId: doc.id)),
                       child: Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(
@@ -180,12 +170,11 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                         margin: EdgeInsets.zero,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 8), // ← tighter padding
+                              horizontal: 10, vertical: 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Ticket ID + Status
                               Row(
                                 mainAxisAlignment:
                                 MainAxisAlignment.spaceBetween,
@@ -193,7 +182,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                   Text(
                                     ticketNo != null
                                         ? '#$ticketNo'
-                                        : '#----', // ← shorter label
+                                        : '#${doc.id}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 12,
@@ -205,7 +194,8 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                     decoration: BoxDecoration(
                                       color: _getStatusColor(status)
                                           .withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius:
+                                      BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       status.toUpperCase(),
@@ -218,10 +208,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                   ),
                                 ],
                               ),
-
                               const SizedBox(height: 4),
-
-                              // Topic
                               Text(
                                 data['topic'] ?? 'No topic',
                                 maxLines: 1,
@@ -232,10 +219,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                   height: 1.2,
                                 ),
                               ),
-
                               const SizedBox(height: 3),
-
-                              // Preview
                               Text(
                                 data['details'] ?? '',
                                 maxLines: 2,
@@ -246,13 +230,11 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
                                   height: 1.2,
                                 ),
                               ),
-
                               const Spacer(),
-
-                              // User + Date
                               Row(
                                 children: [
-                                  const Icon(Icons.person_outline, size: 12),
+                                  const Icon(Icons.person_outline,
+                                      size: 12),
                                   const SizedBox(width: 3),
                                   Expanded(
                                     child: Text(
@@ -285,12 +267,7 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createDummyTicket,
-        backgroundColor: const Color(0xFF835FFF),
-        icon: const Icon(Icons.add),
-        label: const Text('New Ticket'),
-      ),
+      // ── FAB REMOVED ──
     );
   }
 }
@@ -314,10 +291,12 @@ class StatusFilterPopup extends StatelessWidget {
         PopupMenuItem(value: 'all', child: Text('All Statuses')),
         PopupMenuItem(value: 'resolved', child: Text('Resolved')),
         PopupMenuItem(value: 'in process', child: Text('In Process')),
-        PopupMenuItem(value: 'not applicable', child: Text('Not Applicable')),
+        PopupMenuItem(
+            value: 'not applicable', child: Text('Not Applicable')),
       ],
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -359,6 +338,8 @@ class SortButton extends StatelessWidget {
   }
 }
 
+// ── Ticket Detail ────────────────────────────────────────────────────────────
+
 class TicketDetailScreen extends StatefulWidget {
   final String ticketId;
 
@@ -368,23 +349,41 @@ class TicketDetailScreen extends StatefulWidget {
   State<TicketDetailScreen> createState() => _TicketDetailScreenState();
 }
 
-String _statusFilter = 'all';
-
 class _TicketDetailScreenState extends State<TicketDetailScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final TextEditingController _replyController = TextEditingController();
-  String _status = 'in process';
 
-  Future<DocumentSnapshot> _loadTicket() {
-    return _db.collection('support_tickets').doc(widget.ticketId).get();
-  }
+  // ✅ Instance variable — NOT global
+  String _selectedStatus = 'in process';
+  bool _isSaving = false;
+
+  Future<DocumentSnapshot> _loadTicket() =>
+      _db.collection('support_tickets').doc(widget.ticketId).get();
 
   Future<void> _updateTicket() async {
-    await _db.collection('support_tickets').doc(widget.ticketId).update({
-      'status': _status,
-      'adminReply': _replyController.text.trim(),
-    });
-    Get.back();
+    setState(() => _isSaving = true);
+    try {
+      await _db
+          .collection('support_tickets')
+          .doc(widget.ticketId)
+          .update({
+        'status': _selectedStatus, // ✅ uses instance variable
+        'adminReply': _replyController.text.trim(),
+      });
+      Get.back();
+      Get.snackbar(
+        '✅ Updated',
+        'Ticket status set to $_selectedStatus',
+        backgroundColor: const Color(0xFF835FFF).withOpacity(0.1),
+        colorText: const Color(0xFF835FFF),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar('Error', e.toString(),
+          backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      setState(() => _isSaving = false);
+    }
   }
 
   Color _getStatusColor(String status) {
@@ -413,20 +412,32 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF835FFF)));
+                child:
+                CircularProgressIndicator(color: Color(0xFF835FFF)));
           }
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          _status = data['status'] ?? _status;
+          final data =
+          snapshot.data!.data() as Map<String, dynamic>;
+
+          // Seed status once from Firestore
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final fs = data['status'] ?? 'in process';
+            if (_selectedStatus != fs) {
+              setState(() => _selectedStatus = fs);
+            }
+          });
+
           _replyController.text = data['adminReply'] ?? '';
 
           return Padding(
             padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
+                // Topic
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF835FFF).withOpacity(0.1),
+                    color:
+                    const Color(0xFF835FFF).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(data['topic'] ?? '',
@@ -436,128 +447,123 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           color: Color(0xFF222222))),
                 ),
                 const SizedBox(height: 16),
-                Text('Details:',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Color(0xFF222222))),
+
+                // Details
+                const Text('Details:',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF222222))),
                 const SizedBox(height: 6),
                 Text(data['details'] ?? '',
                     style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 16),
-                Text('User Information',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Color(0xFF222222))),
+
+                // User info
+                const Text('User Information',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF222222))),
                 const SizedBox(height: 6),
-                Text('Name: ${data['userName']}'),
-                Text('Email: ${data['userEmail']}'),
-                Text('User ID: ${data['userId']}'),
+                Text('Name: ${data['userName'] ?? '--'}'),
+                Text('Email: ${data['userEmail'] ?? '--'}'),
+                Text('User ID: ${data['userId'] ?? '--'}'),
                 const SizedBox(height: 16),
                 Text('Ticket ID: ${widget.ticketId}'),
                 const SizedBox(height: 16),
+
+                // Admin reply
                 TextField(
                   controller: _replyController,
                   maxLines: 4,
                   decoration: InputDecoration(
                     labelText: 'Admin Reply',
-                    labelStyle: const TextStyle(color: Color(0xFF835FFF)),
+                    labelStyle:
+                    const TextStyle(color: Color(0xFF835FFF)),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF835FFF))),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF835FFF))),
                     focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF835FFF))),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF835FFF))),
                   ),
                 ),
                 const SizedBox(height: 16),
-                StatusFilterDropdown(
-                  value: _statusFilter,
-                  onChanged: (val) {
-                    setState(() => _statusFilter = val);
-                  },
+
+                // ✅ Status dropdown — properly bound to _selectedStatus
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedStatus,
+                      isExpanded: true,
+                      dropdownColor: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          color: Color(0xFF835FFF)),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'in process',
+                          child: Text('In Process'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'resolved',
+                          child: Text('Resolved'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'not applicable',
+                          child: Text('Not Applicable'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedStatus = val);
+                        }
+                      },
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
+
+                // Update button
                 ElevatedButton(
-                  onPressed: _updateTicket,
+                  onPressed: _isSaving ? null : _updateTicket,
                   style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF835FFF),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding:
+                      const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12))),
-                  child: const Text('Update Ticket',
-                      style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isSaving
+                      ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white),
+                  )
+                      : const Text('Update Ticket',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class StatusFilterDropdown extends StatelessWidget {
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  const StatusFilterDropdown({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      onSelected: onChanged,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: 'all',
-          child: Text('All Statuses'),
-        ),
-        PopupMenuItem(
-          value: 'resolved',
-          child: Text('Resolved'),
-        ),
-        PopupMenuItem(
-          value: 'in process',
-          child: Text('In Process'),
-        ),
-        PopupMenuItem(
-          value: 'not applicable',
-          child: Text('Not Applicable'),
-        ),
-      ],
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              value == 'all' ? 'All Statuses' : value.toUpperCase(),
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_drop_down, color: Color(0xFF835FFF)),
-          ],
-        ),
       ),
     );
   }

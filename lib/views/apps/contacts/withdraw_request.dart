@@ -27,10 +27,23 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
       <Map<String, dynamic>>[].obs;
   final RxBool isLoading = true.obs;
 
+  // Per-row state: selected dropdown value and description controller
+  final Map<int, String?> _selectedStatus = {};
+  final Map<int, TextEditingController> _descControllers = {};
+  final Map<int, RxBool> _isSaving = {};
+
   @override
   void initState() {
     super.initState();
     _fetchRequests();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _descControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _fetchRequests() async {
@@ -42,6 +55,16 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
           .get();
       withdrawRequests.value =
           snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+
+      // Init per-row controllers
+      _selectedStatus.clear();
+      _descControllers.forEach((_, c) => c.dispose());
+      _descControllers.clear();
+      _isSaving.clear();
+      for (int i = 0; i < withdrawRequests.length; i++) {
+        _descControllers[i] = TextEditingController();
+        _isSaving[i] = false.obs;
+      }
     } catch (e) {
       Get.snackbar('Error', 'Failed to load requests: $e',
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -50,29 +73,52 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
     }
   }
 
-  Future<void> _updateStatus(String docId, String newStatus, int index) async {
-    try {
-      await _firestore
-          .collection('withdraw_requests')
-          .doc(docId)
-          .update({'status': newStatus});
+  Future<void> _saveStatus(String docId, int index) async {
+    final newStatus = _selectedStatus[index];
+    final description = _descControllers[index]?.text.trim() ?? '';
 
-      final updated =
-      Map<String, dynamic>.from(withdrawRequests[index]);
+    if (newStatus == null) {
+      Get.snackbar('Validation', 'Please select a status.',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+    if (description.isEmpty) {
+      Get.snackbar('Validation', 'Please enter a comment/description.',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+
+    try {
+      _isSaving[index]?.value = true;
+
+      await _firestore.collection('withdraw_requests').doc(docId).update({
+        'status': newStatus,
+        'admin_comment': description,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      final updated = Map<String, dynamic>.from(withdrawRequests[index]);
       updated['status'] = newStatus;
+      updated['admin_comment'] = description;
       withdrawRequests[index] = updated;
+
+      // Clear local row state (it's now locked)
+      _selectedStatus.remove(index);
+      _descControllers[index]?.clear();
 
       Get.snackbar(
         newStatus == 'approved' ? '✅ Approved' : '❌ Rejected',
-        'Withdrawal request has been $newStatus.',
-        backgroundColor:
-        newStatus == 'approved' ? Colors.green : Colors.red,
+        'Request has been $newStatus.\nComment: $description',
+        backgroundColor: newStatus == 'approved' ? Colors.green : Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
       );
     } catch (e) {
       Get.snackbar('Error', 'Failed to update status.',
           backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      _isSaving[index]?.value = false;
     }
   }
 
@@ -98,8 +144,7 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
                 MyBreadcrumb(
                   children: [
                     MyBreadcrumbItem(name: 'Dashboard', route: '/dashboard'),
-                    MyBreadcrumbItem(
-                        name: 'Withdraw Requests', active: true),
+                    MyBreadcrumbItem(name: 'Withdraw Requests', active: true),
                   ],
                 ),
               ],
@@ -146,12 +191,12 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
                       children: [
                         Expanded(
                             flex: 2,
-                            child: MyText.bodySmall("User",
-                                fontWeight: 700)),
+                            child:
+                            MyText.bodySmall("User", fontWeight: 700)),
                         Expanded(
                             flex: 3,
-                            child: MyText.bodySmall("Email",
-                                fontWeight: 700)),
+                            child:
+                            MyText.bodySmall("Email", fontWeight: 700)),
                         Expanded(
                             flex: 1,
                             child: MyText.bodySmall("Amount",
@@ -169,8 +214,8 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
                             child: MyText.bodySmall("Status",
                                 fontWeight: 700)),
                         Expanded(
-                            flex: 2,
-                            child: MyText.bodySmall("Action",
+                            flex: 4,
+                            child: MyText.bodySmall("Admin Action",
                                 fontWeight: 700)),
                       ],
                     ),
@@ -206,10 +251,13 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
                         final req = withdrawRequests[index];
                         final status =
                         (req['status'] ?? 'pending').toString();
+                        final isPending =
+                            status.toLowerCase() == 'pending';
                         final requestedAt = req['requested_at'] != null
-                            ? (req['requested_at'] as Timestamp)
-                            .toDate()
+                            ? (req['requested_at'] as Timestamp).toDate()
                             : null;
+                        final adminComment =
+                            req['admin_comment']?.toString() ?? '';
 
                         Color statusColor;
                         switch (status.toLowerCase()) {
@@ -227,6 +275,7 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
                           padding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 8),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // User Name
                               Expanded(
@@ -276,68 +325,38 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
                               // Status Badge
                               Expanded(
                                 flex: 2,
-                                child: MyContainer(
-                                  padding: MySpacing.xy(10, 5),
-                                  borderRadiusAll: 12,
-                                  color:
-                                  statusColor.withOpacity(.15),
-                                  child: MyText.bodySmall(
-                                    status.toUpperCase(),
-                                    color: statusColor,
-                                    fontWeight: 600,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    MyContainer(
+                                      padding: MySpacing.xy(10, 5),
+                                      borderRadiusAll: 12,
+                                      color: statusColor.withOpacity(.15),
+                                      child: MyText.bodySmall(
+                                        status.toUpperCase(),
+                                        color: statusColor,
+                                        fontWeight: 600,
+                                      ),
+                                    ),
+                                    if (adminComment.isNotEmpty) ...[
+                                      MySpacing.height(4),
+                                      MyText.bodySmall(
+                                        '💬 $adminComment',
+                                        muted: true,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
-                              // Action Buttons
+                              // ── Admin Action Column ──
                               Expanded(
-                                flex: 2,
-                                child: status.toLowerCase() ==
-                                    'pending'
-                                    ? Row(
-                                  children: [
-                                    // Approve
-                                    GestureDetector(
-                                      onTap: () => _updateStatus(
-                                          req['id'],
-                                          'approved',
-                                          index),
-                                      child: MyContainer(
-                                        padding:
-                                        MySpacing.xy(10, 6),
-                                        borderRadiusAll: 8,
-                                        color: Colors.green
-                                            .withOpacity(.15),
-                                        child: MyText.bodySmall(
-                                          "Approve",
-                                          color: Colors.green,
-                                          fontWeight: 600,
-                                        ),
-                                      ),
-                                    ),
-                                    MySpacing.width(6),
-                                    // Reject
-                                    GestureDetector(
-                                      onTap: () => _updateStatus(
-                                          req['id'],
-                                          'rejected',
-                                          index),
-                                      child: MyContainer(
-                                        padding:
-                                        MySpacing.xy(10, 6),
-                                        borderRadiusAll: 8,
-                                        color: Colors.red
-                                            .withOpacity(.15),
-                                        child: MyText.bodySmall(
-                                          "Reject",
-                                          color: Colors.red,
-                                          fontWeight: 600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                                    : MyText.bodySmall("—",
-                                    muted: true),
+                                flex: 4,
+                                child: isPending
+                                    ? _buildActionWidget(index, req['id'])
+                                    : MyText.bodySmall("—", muted: true),
                               ),
                             ],
                           ),
@@ -353,4 +372,200 @@ class _WithdrawRequestsScreenState extends State<WithdrawRequestsScreen> {
       ),
     );
   }
-}
+
+  Widget _buildActionWidget(int index, String docId) {
+    _descControllers.putIfAbsent(index, () => TextEditingController());
+    _isSaving.putIfAbsent(index, () => false.obs);
+
+    return Obx(() {
+      final isSaving = _isSaving[index]?.value == true;
+      final selectedVal = _selectedStatus[index]; // won't react since it's a plain Map
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Dropdown ──
+          Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedVal,
+                isExpanded: true,
+                dropdownColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                elevation: 3,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 20, color: Colors.grey),
+                hint: const Text(
+                  "Select status",
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                selectedItemBuilder: (context) => [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_rounded,
+                            color: Colors.green, size: 16),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Approve',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cancel_rounded,
+                            color: Colors.red, size: 16),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Reject',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                items: [
+                  DropdownMenuItem(
+                    value: 'approved',
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(Icons.check_rounded,
+                                color: Colors.green, size: 14),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Approve',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'rejected',
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(Icons.close_rounded,
+                                color: Colors.red, size: 14),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Reject',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (val) {
+                  setState(() => _selectedStatus[index] = val);
+                },
+              ),
+            ),
+          ),
+          if (selectedVal != null) ...[
+            MySpacing.height(6),
+            TextField(
+              controller: _descControllers[index],
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Add admin comment...',
+                hintStyle: const TextStyle(fontSize: 12),
+                contentPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+              style: const TextStyle(fontSize: 12),
+            ),
+            MySpacing.height(6),
+          ],
+
+          // ── Save Button ──
+          SizedBox(
+            width: double.infinity,
+            height: 32,
+            child: ElevatedButton(
+              onPressed: isSaving ? null : () => _saveStatus(docId, index),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                selectedVal == 'rejected' ? Colors.red : Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: isSaving
+                  ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : const Text(
+                'Save',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }}
